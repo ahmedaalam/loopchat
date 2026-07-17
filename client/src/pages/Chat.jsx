@@ -1,8 +1,58 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 
 const ENDPOINT = "http://localhost:5000";
+
+// ─── Web Audio notification beep (no audio file needed) ───────────────────────
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Main tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);          // A5
+    osc1.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
+    gain1.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.4);
+
+    // Subtle harmony
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(660, ctx.currentTime);         // E5
+    osc2.frequency.setValueAtTime(784, ctx.currentTime + 0.1);   // G5
+    gain2.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
+    osc2.start(ctx.currentTime);
+    osc2.stop(ctx.currentTime + 0.4);
+  } catch (e) {
+    // AudioContext not supported — silent fallback
+  }
+}
+
+// ─── Show browser (OS-level) notification ─────────────────────────────────────
+function showBrowserNotification(senderName, messageContent, chatName) {
+  if (Notification.permission !== "granted") return;
+  const title = chatName ? `${chatName} • ${senderName}` : senderName;
+  const notification = new Notification(title, {
+    body: messageContent,
+    icon: "/favicon.svg",
+    badge: "/favicon.svg",
+    tag: "loopchat-msg",      // replaces any existing notification (no spam)
+    renotify: true,
+  });
+  // Auto-close after 5 s
+  setTimeout(() => notification.close(), 5000);
+}
 
 function Chat() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -42,7 +92,7 @@ function Chat() {
     }
   }, [selectedChat]);
 
-  // 1. Auth setup & load chats
+  // 1. Auth setup, load chats, and request notification permission
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (!storedUser) {
@@ -50,6 +100,11 @@ function Chat() {
     } else {
       setCurrentUser(storedUser);
       fetchChats(storedUser.token);
+    }
+
+    // Ask for browser notification permission once on load
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
     }
   }, []);
 
@@ -69,7 +124,10 @@ function Chat() {
 
     const handleReceivedMessage = (receivedMsg) => {
       const activeChat = selectedChatRef.current;
-      if (activeChat && activeChat._id === receivedMsg.chat) {
+      const isTabVisible = document.visibilityState === "visible";
+      const isActiveChat = activeChat && activeChat._id === receivedMsg.chat;
+
+      if (isActiveChat) {
         setMessages((prev) => [...prev, receivedMsg]);
       } else {
         setNotifications((prev) => {
@@ -77,12 +135,28 @@ function Chat() {
           return [...prev, receivedMsg];
         });
       }
+
+      // Always update sidebar latest message & order
       setChats((prev) => {
         const updated = prev.map((c) =>
           c._id === receivedMsg.chat ? { ...c, latestMessage: receivedMsg } : c
         );
         return updated.sort((a, b) => (a._id === receivedMsg.chat ? -1 : b._id === receivedMsg.chat ? 1 : 0));
       });
+
+      // 🔔 Trigger notification + sound when:
+      //    - tab is not focused, OR
+      //    - message is from a different chat
+      if (!isTabVisible || !isActiveChat) {
+        // Play sound
+        playNotificationSound();
+
+        // Show OS notification
+        const sender = receivedMsg.sender;
+        const senderName = typeof sender === "object" ? sender.name : "Someone";
+        const chatName = activeChat?.isGroupChat ? activeChat.chatName : null;
+        showBrowserNotification(senderName, receivedMsg.content, chatName);
+      }
     };
 
     const handleTyping = (room) => {
