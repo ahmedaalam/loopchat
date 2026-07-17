@@ -15,3 +15,16 @@ exports.sendMessage = async (req, res) => {
 
   res.status(201).json(message);
 };
+
+// GET all messages of a chat
+exports.getMessages = async (req, res) => {
+  try {
+    const messages = await Message.find({ chat: req.params.chatId })
+      .populate("sender", "name email")
+      .sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

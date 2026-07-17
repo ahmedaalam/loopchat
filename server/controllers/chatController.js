@@ -22,3 +22,18 @@ exports.accessChat = async (req, res) => {
 
   res.status(201).json(newChat);
 };
+
+// GET all chats for logged-in user
+exports.fetchChats = async (req, res) => {
+  try {
+    const chats = await Chat.find({
+      users: { $in: [req.user] },
+    })
+      .populate("users", "-password")
+      .sort({ updatedAt: -1 });
+
+    res.json(chats);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
