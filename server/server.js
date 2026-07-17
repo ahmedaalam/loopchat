@@ -48,9 +48,20 @@ const io = new Server(server, {
   },
 });
 
+// track online users (userId -> socketId)
+const onlineUsers = {};
+
 // socket events
 io.on("connection", (socket) => {
   console.log("🔥 User connected:", socket.id);
+
+  // Setup user and track online status
+  socket.on("setup", (userId) => {
+    socket.join(userId);
+    onlineUsers[userId] = socket.id;
+    console.log(`👤 User online: ${userId}`);
+    io.emit("online users", Object.keys(onlineUsers));
+  });
 
   // join specific chat room
   socket.on("join chat", (room) => {
@@ -58,12 +69,37 @@ io.on("connection", (socket) => {
     console.log("📌 Joined room:", room);
   });
 
+  // typing status
+  socket.on("typing", (room) => {
+    socket.to(room).emit("typing", room);
+  });
+
+  socket.on("stop typing", (room) => {
+    socket.to(room).emit("stop typing", room);
+  });
+
   // send message to others in room
   socket.on("send message", (data) => {
-    socket.to(data.chatId).emit("receive message", data);
+    // data should contain { chat, sender, content, ... }
+    const chatId = data.chat;
+    if (chatId) {
+      socket.to(chatId).emit("receive message", data);
+    }
   });
 
   socket.on("disconnect", () => {
+    let disconnectedUserId = null;
+    for (const [userId, socketId] of Object.entries(onlineUsers)) {
+      if (socketId === socket.id) {
+        disconnectedUserId = userId;
+        delete onlineUsers[userId];
+        break;
+      }
+    }
+    if (disconnectedUserId) {
+      io.emit("online users", Object.keys(onlineUsers));
+      console.log(`👤 User offline: ${disconnectedUserId}`);
+    }
     console.log("❌ User disconnected:", socket.id);
   });
 });

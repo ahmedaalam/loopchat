@@ -10,15 +10,17 @@ exports.accessChat = async (req, res) => {
 
   let chat = await Chat.findOne({
     users: { $all: [req.user, userId] },
-  });
+  }).populate("users", "-password");
 
   if (chat) {
     return res.json(chat);
   }
 
-  const newChat = await Chat.create({
+  let newChat = await Chat.create({
     users: [req.user, userId],
   });
+
+  newChat = await newChat.populate("users", "-password");
 
   res.status(201).json(newChat);
 };

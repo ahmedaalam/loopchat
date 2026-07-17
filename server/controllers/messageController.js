@@ -7,11 +7,13 @@ exports.sendMessage = async (req, res) => {
     return res.status(400).send("Invalid data");
   }
 
-  const message = await Message.create({
+  let message = await Message.create({
     sender: req.user,
     content,
     chat: chatId,
   });
+
+  message = await message.populate("sender", "name email");
 
   res.status(201).json(message);
 };
