@@ -54,6 +54,42 @@ function showBrowserNotification(senderName, messageContent, chatName) {
   setTimeout(() => notification.close(), 5000);
 }
 
+// ─── Reusable tick icon ───────────────────────────────────────────────────────
+// tickState: 'sent' | 'delivered' | 'read'
+function TickIcon({ tickState, size = 9 }) {
+  // Colors chosen to harmonize with the blue bubble (#2563eb):
+  //  sent      → single faint-white tick  (barely there, just confirms sent)
+  //  delivered → double brighter-white    (clearly visible double tick)
+  //  read      → double soft-cyan         (same color family as blue, clearly distinct)
+  const SENT      = "rgba(255,255,255,0.38)";
+  const DELIVERED = "rgba(255,255,255,0.82)";
+  const READ      = "#67e8f9"; // cyan-300 — harmonious with blue, clearly stands out
+
+  const isDouble = tickState !== "sent";
+  const color    = tickState === "read" ? READ : tickState === "delivered" ? DELIVERED : SENT;
+  const sw       = 2.5;
+
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", flexShrink: 0, marginLeft: 2 }}>
+      {isDouble ? (
+        <svg viewBox="0 0 22 11" fill="none" width={size * 2} height={size}
+             style={{ overflow: "visible" }}>
+          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw}
+                strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M7 5.5L11.5 10L21 1" stroke={color} strokeWidth={sw}
+                strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 16 11" fill="none" width={size * 1.3} height={size}
+             style={{ overflow: "visible" }}>
+          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw}
+                strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 function Chat() {
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
@@ -84,13 +120,29 @@ function Chat() {
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // ─── Mark messages in chat as read ──────────────────────────────────────────
+  const markChatAsRead = useCallback(async (chatId) => {
+    if (!currentUser) return;
+    try {
+      await axios.put(
+        `http://localhost:5000/api/message/${chatId}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      socket?.emit("read messages", { chatId, readerId: currentUser.user._id });
+    } catch (err) {
+      console.error("Error marking messages as read:", err);
+    }
+  }, [currentUser, socket]);
+
   // Sync ref with selectedChat for socket closures
   useEffect(() => {
     selectedChatRef.current = selectedChat;
     if (selectedChat) {
       setNotifications((prev) => prev.filter((n) => n.chat !== selectedChat._id));
+      markChatAsRead(selectedChat._id);
     }
-  }, [selectedChat]);
+  }, [selectedChat, markChatAsRead]);
 
   // 1. Auth setup, load chats, and request notification permission
   useEffect(() => {
@@ -129,6 +181,7 @@ function Chat() {
 
       if (isActiveChat) {
         setMessages((prev) => [...prev, receivedMsg]);
+        markChatAsRead(receivedMsg.chat);
       } else {
         setNotifications((prev) => {
           if (prev.some((n) => n._id === receivedMsg._id)) return prev;
@@ -159,6 +212,40 @@ function Chat() {
       }
     };
 
+    const handleMessagesRead = ({ chatId, readerId }) => {
+      const activeChat = selectedChatRef.current;
+      if (activeChat && activeChat._id === chatId) {
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (!msg.readBy.includes(readerId)) {
+              return { ...msg, readBy: [...msg.readBy, readerId] };
+            }
+            return msg;
+          })
+        );
+      }
+
+      // Update sidebar tick
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c._id === chatId && c.latestMessage) {
+            const sender = c.latestMessage.sender;
+            const senderId = typeof sender === "object" ? sender._id : sender;
+            if (senderId !== readerId && !c.latestMessage.readBy.includes(readerId)) {
+              return {
+                ...c,
+                latestMessage: {
+                  ...c.latestMessage,
+                  readBy: [...c.latestMessage.readBy, readerId],
+                },
+              };
+            }
+          }
+          return c;
+        })
+      );
+    };
+
     const handleTyping = (room) => {
       if (selectedChatRef.current?._id === room) setIsTyping(true);
     };
@@ -167,14 +254,17 @@ function Chat() {
     };
 
     socket.on("receive message", handleReceivedMessage);
+    socket.on("messages read", handleMessagesRead);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
+
     return () => {
       socket.off("receive message", handleReceivedMessage);
+      socket.off("messages read", handleMessagesRead);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
     };
-  }, [socket]);
+  }, [socket, markChatAsRead]);
 
   // 4. Auto scroll
   useEffect(() => {
@@ -202,6 +292,7 @@ function Chat() {
       });
       setMessages(data);
       socket?.emit("join chat", chatId);
+      markChatAsRead(chatId);
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
@@ -579,7 +670,20 @@ function Chat() {
                                   const senderId = typeof sender === "object" ? sender._id : sender;
                                   const senderName = typeof sender === "object" ? sender.name : "User";
                                   const isMe = senderId === currentUser?.user?._id;
-                                  return `${isMe ? "You" : senderName}: ${chat.latestMessage.content}`;
+                                  const latestReadBy = chat.latestMessage.readBy || [];
+                                  const sidebarIsRead = latestReadBy.some(
+                                    (id) => (typeof id === "object" ? id._id : id) !== currentUser?.user?._id
+                                  );
+                                  const sidebarIsDelivered = !chat.isGroupChat && isRecipientOnline(chat);
+                                  const sidebarTickState = sidebarIsRead ? "read" : sidebarIsDelivered ? "delivered" : "sent";
+                                  return (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                                      {isMe && !chat.isGroupChat && (
+                                        <TickIcon tickState={sidebarTickState} size={8} />
+                                      )}
+                                      <span>{isMe ? "You" : senderName}: {chat.latestMessage.content}</span>
+                                    </span>
+                                  );
                                 })()
                               ) : (
                                 "No messages yet"
@@ -663,18 +767,36 @@ function Chat() {
                   const senderName = typeof msg.sender === "object" ? msg.sender.name : "User";
                   const isSentByMe = senderId === currentUser.user._id;
 
+                  // ─── Tick logic (only for sent messages, 1-to-1 chats) ─────
+                  const readBy = msg.readBy || [];
+                  const isRead = readBy.some(
+                    (id) => (typeof id === "object" ? id._id : id) !== currentUser.user._id
+                  );
+                  const recipient = !selectedChat.isGroupChat
+                    ? getRecipient(selectedChat.users)
+                    : null;
+                  const isDelivered = recipient && onlineUsers.includes(recipient._id);
+
+                  let tickState = "sent";      // single gray ✓
+                  if (isRead) tickState = "read";           // double blue ✓✓
+                  else if (isDelivered) tickState = "delivered"; // double gray ✓✓
+
                   return (
                     <div key={msg._id} className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
                       <div className="message-bubble">
-                        {/* Show sender name in group chats for received messages */}
+                        {/* Sender name in group chats */}
                         {selectedChat.isGroupChat && !isSentByMe && (
-                          <div style={{ fontSize: "0.72rem", color: "var(--accent-purple)", fontWeight: 600, marginBottom: "0.25rem" }}>
+                          <div style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: 600, marginBottom: "0.25rem" }}>
                             {senderName}
                           </div>
                         )}
                         <div>{msg.content}</div>
                         <div className="message-info">
                           <span>{formatTime(msg.createdAt)}</span>
+                          {/* WhatsApp-style ticks — sent messages in 1-to-1 chats only */}
+                          {isSentByMe && !selectedChat.isGroupChat && (
+                            <TickIcon tickState={tickState} size={9} />
+                          )}
                         </div>
                       </div>
                     </div>

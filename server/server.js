@@ -87,6 +87,13 @@ io.on("connection", (socket) => {
     }
   });
 
+  // read receipts
+  socket.on("read messages", ({ chatId, readerId }) => {
+    if (chatId) {
+      socket.to(chatId).emit("messages read", { chatId, readerId });
+    }
+  });
+
   socket.on("disconnect", () => {
     let disconnectedUserId = null;
     for (const [userId, socketId] of Object.entries(onlineUsers)) {

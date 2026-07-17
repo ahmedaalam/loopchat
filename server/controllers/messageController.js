@@ -12,6 +12,7 @@ exports.sendMessage = async (req, res) => {
     sender: req.user,
     content,
     chat: chatId,
+    readBy: [req.user],
   });
 
   message = await message.populate("sender", "name email");
@@ -30,6 +31,26 @@ exports.getMessages = async (req, res) => {
       .sort({ createdAt: 1 });
 
     res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// MARK all messages in a chat as read
+exports.markAsRead = async (req, res) => {
+  const { chatId } = req.params;
+  try {
+    await Message.updateMany(
+      {
+        chat: chatId,
+        sender: { $ne: req.user },
+        readBy: { $ne: req.user }
+      },
+      {
+        $addToSet: { readBy: req.user }
+      }
+    );
+    res.json({ message: "Messages marked as read" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
