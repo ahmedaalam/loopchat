@@ -1,4 +1,5 @@
 const Message = require("../models/Message");
+const Chat = require("../models/Chat");
 
 exports.sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
@@ -14,6 +15,9 @@ exports.sendMessage = async (req, res) => {
   });
 
   message = await message.populate("sender", "name email");
+
+  // Update latest message in Chat
+  await Chat.findByIdAndUpdate(chatId, { latestMessage: message._id });
 
   res.status(201).json(message);
 };

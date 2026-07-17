@@ -10,7 +10,12 @@ exports.accessChat = async (req, res) => {
 
   let chat = await Chat.findOne({
     users: { $all: [req.user, userId] },
-  }).populate("users", "-password");
+  })
+    .populate("users", "-password")
+    .populate({
+      path: "latestMessage",
+      populate: { path: "sender", select: "name email" },
+    });
 
   if (chat) {
     return res.json(chat);
@@ -32,6 +37,10 @@ exports.fetchChats = async (req, res) => {
       users: { $in: [req.user] },
     })
       .populate("users", "-password")
+      .populate({
+        path: "latestMessage",
+        populate: { path: "sender", select: "name email" },
+      })
       .sort({ updatedAt: -1 });
 
     res.json(chats);

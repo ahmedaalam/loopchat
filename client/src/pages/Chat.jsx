@@ -81,6 +81,21 @@ function Chat() {
           return [...prev, receivedMsg];
         });
       }
+
+      // Update latest message in chats list and move it to top
+      setChats((prevChats) => {
+        const updated = prevChats.map((c) => {
+          if (c._id === receivedMsg.chat) {
+            return { ...c, latestMessage: receivedMsg };
+          }
+          return c;
+        });
+        return updated.sort((a, b) => {
+          if (a._id === receivedMsg.chat) return -1;
+          if (b._id === receivedMsg.chat) return 1;
+          return 0;
+        });
+      });
     };
 
     const handleTyping = (room) => {
@@ -232,6 +247,21 @@ function Chat() {
 
       setMessages((prev) => [...prev, data]);
 
+      // Update latest message in chats list and move it to top
+      setChats((prevChats) => {
+        const updated = prevChats.map((c) => {
+          if (c._id === selectedChat._id) {
+            return { ...c, latestMessage: data };
+          }
+          return c;
+        });
+        return updated.sort((a, b) => {
+          if (a._id === selectedChat._id) return -1;
+          if (b._id === selectedChat._id) return 1;
+          return 0;
+        });
+      });
+
       // Emit socket event
       if (socket) {
         socket.emit("send message", data);
@@ -352,8 +382,18 @@ function Chat() {
                               <span style={{ color: "var(--accent)", fontWeight: "500" }}>
                                 {chatNotifications[chatNotifications.length - 1].content}
                               </span>
+                            ) : chat.latestMessage ? (
+                              <span>
+                                {(() => {
+                                  const sender = chat.latestMessage.sender;
+                                  const senderId = typeof sender === "object" ? sender._id : sender;
+                                  const senderName = typeof sender === "object" ? sender.name : "User";
+                                  const isMe = senderId === currentUser?.user?._id;
+                                  return `${isMe ? "You" : senderName}: ${chat.latestMessage.content}`;
+                                })()}
+                              </span>
                             ) : (
-                              "Click to chat"
+                              "No messages yet"
                             )}
                           </span>
                           {chatNotifications.length > 0 && (
