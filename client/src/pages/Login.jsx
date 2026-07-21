@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import LoopChatLogo from "../components/LoopChatLogo";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,9 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <div style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "center" }}>
+          <LoopChatLogo size={40} textSize="1.5rem" />
+        </div>
         <h2 className="auth-title">Welcome Back</h2>
         <p className="auth-subtitle">Sign in to continue to LoopChat</p>
         

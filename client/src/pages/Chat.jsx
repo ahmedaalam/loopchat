@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import io from "socket.io-client";
+import LoopChatLogo from "../components/LoopChatLogo";
 
 const ENDPOINT = "http://localhost:5000";
 
@@ -609,17 +610,20 @@ function Chat() {
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
           <div className="sidebar-header">
+            {/* Brand logo row */}
+            <div style={{ width: "100%", padding: "0.25rem 0 0.85rem", borderBottom: "1px solid var(--border)", marginBottom: "0.85rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <LoopChatLogo size={26} textSize="1.05rem" />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button className="new-group-btn" onClick={() => setShowGroupModal(true)}>+ Group</button>
+                <button className="logout-btn" onClick={handleLogout}>Logout</button>
+              </div>
+            </div>
+            {/* User row */}
             <div className="user-profile">
               <div className="avatar avatar-online">
                 {currentUser?.user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="username">{currentUser?.user?.name || "..."}</div>
-            </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="new-group-btn" onClick={() => setShowGroupModal(true)}>
-                + Group
-              </button>
-              <button className="logout-btn" onClick={handleLogout}>Logout</button>
             </div>
           </div>
 
