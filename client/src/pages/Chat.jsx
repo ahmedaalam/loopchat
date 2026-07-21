@@ -494,6 +494,37 @@ function Chat() {
   const formatTime = (dateStr) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  // ─── WhatsApp-style date label ───────────────────────────────────────────────
+  const getDateLabel = (dateStr) => {
+    const msgDate = new Date(dateStr);
+    const today   = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const sameDay = (a, b) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth()    === b.getMonth()    &&
+      a.getDate()     === b.getDate();
+
+    if (sameDay(msgDate, today))     return "Today";
+    if (sameDay(msgDate, yesterday)) return "Yesterday";
+
+    const daysAgo = Math.floor((today - msgDate) / 86_400_000);
+    if (daysAgo < 7) {
+      return msgDate.toLocaleDateString([], { weekday: "long" }); // e.g. "Monday"
+    }
+    return msgDate.toLocaleDateString([], { day: "numeric", month: "long", year: "numeric" });
+  };
+
+  const isSameDay = (a, b) => {
+    const da = new Date(a), db = new Date(b);
+    return (
+      da.getFullYear() === db.getFullYear() &&
+      da.getMonth()    === db.getMonth()    &&
+      da.getDate()     === db.getDate()
+    );
+  };
+
   return (
     <>
       {/* Create Group Modal */}
@@ -762,7 +793,7 @@ function Chat() {
 
               {/* Messages pane */}
               <div className="messages-pane">
-                {messages.map((msg) => {
+                {messages.map((msg, idx) => {
                   const senderId = typeof msg.sender === "object" ? msg.sender._id : msg.sender;
                   const senderName = typeof msg.sender === "object" ? msg.sender.name : "User";
                   const isSentByMe = senderId === currentUser.user._id;
@@ -781,25 +812,36 @@ function Chat() {
                   if (isRead) tickState = "read";           // double blue ✓✓
                   else if (isDelivered) tickState = "delivered"; // double gray ✓✓
 
+                  // ─── Date separator ─────────────────────────────────────────
+                  const showDateSep =
+                    idx === 0 || !isSameDay(messages[idx - 1].createdAt, msg.createdAt);
+
                   return (
-                    <div key={msg._id} className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
-                      <div className="message-bubble">
-                        {/* Sender name in group chats */}
-                        {selectedChat.isGroupChat && !isSentByMe && (
-                          <div style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: 600, marginBottom: "0.25rem" }}>
-                            {senderName}
-                          </div>
-                        )}
-                        <div>{msg.content}</div>
-                        <div className="message-info">
-                          <span>{formatTime(msg.createdAt)}</span>
-                          {/* WhatsApp-style ticks — sent messages in 1-to-1 chats only */}
-                          {isSentByMe && !selectedChat.isGroupChat && (
-                            <TickIcon tickState={tickState} size={9} />
+                    <>
+                      {showDateSep && (
+                        <div key={`date-${msg._id}`} className="date-separator">
+                          <span className="date-separator-label">{getDateLabel(msg.createdAt)}</span>
+                        </div>
+                      )}
+                      <div key={msg._id} className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
+                        <div className="message-bubble">
+                          {/* Sender name in group chats */}
+                          {selectedChat.isGroupChat && !isSentByMe && (
+                            <div style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: 600, marginBottom: "0.25rem" }}>
+                              {senderName}
+                            </div>
                           )}
+                          <div>{msg.content}</div>
+                          <div className="message-info">
+                            <span>{formatTime(msg.createdAt)}</span>
+                            {/* WhatsApp-style ticks — sent messages in 1-to-1 chats only */}
+                            {isSentByMe && !selectedChat.isGroupChat && (
+                              <TickIcon tickState={tickState} size={9} />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </>
                   );
                 })}
 
