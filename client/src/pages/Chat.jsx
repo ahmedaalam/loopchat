@@ -609,24 +609,13 @@ function Chat() {
       <div className="chat-container">
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
-          <div className="sidebar-header">
-            {/* Brand logo row */}
-            <div style={{ width: "100%", padding: "0.25rem 0 0.85rem", borderBottom: "1px solid var(--border)", marginBottom: "0.85rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <LoopChatLogo size={26} textSize="1.05rem" />
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button className="new-group-btn" onClick={() => setShowGroupModal(true)}>+ Group</button>
-                <button className="logout-btn" onClick={handleLogout}>Logout</button>
-              </div>
-            </div>
-            {/* User row */}
-            <div className="user-profile">
-              <div className="avatar avatar-online">
-                {currentUser?.user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-              <div className="username">{currentUser?.user?.name || "..."}</div>
-            </div>
+          {/* ── TOP: Brand + New Group ── */}
+          <div className="sidebar-top">
+            <LoopChatLogo size={24} textSize="1rem" />
+            <button className="new-group-btn" onClick={() => setShowGroupModal(true)}>+ Group</button>
           </div>
 
+          {/* ── MIDDLE: Search + Chat list ── */}
           <div className="sidebar-search">
             <div className="search-input-wrapper">
               <input
@@ -740,6 +729,21 @@ function Chat() {
                 </ul>
               </>
             )}
+          </div>
+
+          {/* ── BOTTOM: User profile footer ── */}
+          <div className="sidebar-profile-footer">
+            <div className="avatar avatar-online">
+              {currentUser?.user?.name?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <div className="sidebar-profile-info">
+              <div className="sidebar-profile-name">{currentUser?.user?.name || "..."}</div>
+              <div className="sidebar-profile-status">
+                <span className="sidebar-status-dot" />
+                Online
+              </div>
+            </div>
+            <button className="logout-btn" onClick={handleLogout}>Logout</button>
           </div>
         </div>
 

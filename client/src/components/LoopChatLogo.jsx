@@ -35,17 +35,14 @@ function LoopChatLogo({ size = 36, showText = true, textSize = "1.25rem" }) {
         />
       </svg>
 
-      {/* Wordmark */}
+      {/* Wordmark — solid white */}
       {showText && (
         <span
           style={{
             fontSize: textSize,
             fontWeight: 700,
             letterSpacing: "-0.4px",
-            background: "linear-gradient(135deg, #60a5fa 0%, #2563eb 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
+            color: "#ffffff",
             lineHeight: 1,
           }}
         >
