@@ -656,12 +656,13 @@ function Chat() {
     if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser || uploading) return;
 
     try {
-      setUploading(true);
-      setUploadProgress(0);
-
       let uploadedFilePayload = null;
 
+      // Only trigger upload progress state if a file is attached
       if (pendingFile) {
+        setUploading(true);
+        setUploadProgress(0);
+
         const formData = new FormData();
         formData.append("file", pendingFile.file);
 
@@ -1344,7 +1345,13 @@ function Chat() {
                         </div>
                       )}
                       <div className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
-                        <div className={`message-bubble ${hasMedia ? "has-media" : ""} ${isMediaOnly ? "media-only-bubble" : ""}`}>
+                        <div
+                          className={`message-bubble ${hasMedia ? "has-media" : ""} ${isMediaOnly ? "media-only-bubble" : ""}`}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuMsgId(isMenuOpen ? null : msg._id);
+                          }}
+                        >
                           {/* WhatsApp-Style Chevron Action Menu Trigger */}
                           <button
                             type="button"

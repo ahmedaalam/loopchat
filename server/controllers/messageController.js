@@ -70,8 +70,10 @@ exports.deleteMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    const senderId = typeof message.sender === "object" ? message.sender._id : message.sender;
-    if (senderId.toString() !== req.user._id.toString()) {
+    const senderId = typeof message.sender === "object" ? (message.sender._id || message.sender.id) : message.sender;
+    const currentUserId = typeof req.user === "object" ? (req.user._id || req.user.id) : req.user;
+
+    if (!senderId || !currentUserId || senderId.toString() !== currentUserId.toString()) {
       return res.status(403).json({ message: "Unauthorized to delete this message" });
     }
 
@@ -96,9 +98,9 @@ exports.deleteMessage = async (req, res) => {
       await Chat.findByIdAndUpdate(chatId, { latestMessage: lastRemainingMsg ? lastRemainingMsg._id : null });
     }
 
-    res.json({ message: "Message deleted successfully", messageId, chatId });
+    return res.status(200).json({ message: "Message deleted successfully", messageId, chatId });
   } catch (error) {
     console.error("Delete Message Error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
