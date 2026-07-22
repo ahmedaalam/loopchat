@@ -5,6 +5,94 @@ import LoopChatLogo from "../components/LoopChatLogo";
 
 const ENDPOINT = "http://localhost:5000";
 
+// ─── SVG Helper Icons ────────────────────────────────────────────────────────
+function UsersIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function CrownIcon({ size = 12, color = "#f59e0b" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ verticalAlign: "middle", marginRight: "4px" }}>
+      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 14h14v2H5v-2z" />
+    </svg>
+  );
+}
+
+function VideoIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <polygon points="23 7 16 12 23 17 23 7" />
+      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+    </svg>
+  );
+}
+
+function AudioIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function FileTextIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  );
+}
+
+function CrossIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function CheckIcon({ size = 16, color = "var(--accent)" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ZoomIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="11" y1="8" x2="11" y2="14" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+    </svg>
+  );
+}
+
+function DownloadIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -25,8 +113,8 @@ function playNotificationSound() {
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
     osc1.type = "sine";
-    osc1.frequency.setValueAtTime(880, ctx.currentTime);          // A5
-    osc1.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    osc1.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.1);
     gain1.gain.setValueAtTime(0.25, ctx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
     osc1.start(ctx.currentTime);
@@ -37,14 +125,14 @@ function playNotificationSound() {
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
     osc2.type = "sine";
-    osc2.frequency.setValueAtTime(660, ctx.currentTime);         // E5
-    osc2.frequency.setValueAtTime(784, ctx.currentTime + 0.1);   // G5
+    osc2.frequency.setValueAtTime(660, ctx.currentTime);
+    osc2.frequency.setValueAtTime(784, ctx.currentTime + 0.1);
     gain2.gain.setValueAtTime(0.12, ctx.currentTime);
     gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
     osc2.start(ctx.currentTime);
     osc2.stop(ctx.currentTime + 0.4);
   } catch (e) {
-    // AudioContext not supported — silent fallback
+    // AudioContext not supported
   }
 }
 
@@ -98,7 +186,9 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
       <div className="chat-media-image-wrapper" onClick={() => onOpenLightbox(file)}>
         <img src={fullUrl} alt={file.fileName || "Image"} className="chat-media-image" />
         <div className="chat-media-hover-overlay">
-          <span>🔍 View Full</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+            <ZoomIcon size={14} /> View Full
+          </span>
         </div>
         {showTimeOverlay && (
           <div className="media-time-badge">
@@ -142,13 +232,7 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
   return (
     <div className={`chat-doc-card ${isSentByMe ? "sent-doc" : "received-doc"}`}>
       <div className="doc-icon-container">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
-        </svg>
+        <FileTextIcon size={24} />
       </div>
       <div className="doc-details">
         <div className="doc-name" title={file.fileName}>{file.fileName}</div>
@@ -163,11 +247,7 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
         </div>
       </div>
       <a href={fullUrl} download={file.fileName} target="_blank" rel="noopener noreferrer" className="doc-download-btn" title="Download file">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
+        <DownloadIcon size={16} />
       </a>
     </div>
   );
@@ -181,11 +261,11 @@ function Chat() {
   const [newMessage, setNewMessage] = useState("");
 
   // Attachment & Media state
-  const [pendingFile, setPendingFile] = useState(null); // { file, previewUrl, fileType }
+  const [pendingFile, setPendingFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [mediaLightbox, setMediaLightbox] = useState(null); // { url, fileType, fileName }
+  const [mediaLightbox, setMediaLightbox] = useState(null);
   const fileInputRef = useRef(null);
 
   // Sidebar search
@@ -211,7 +291,7 @@ function Chat() {
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // ─── Mark messages in chat as read ──────────────────────────────────────────
+  // Mark messages in chat as read
   const markChatAsRead = useCallback(async (chatId) => {
     if (!currentUser) return;
     try {
@@ -226,7 +306,6 @@ function Chat() {
     }
   }, [currentUser, socket]);
 
-  // Sync ref with selectedChat for socket closures
   useEffect(() => {
     selectedChatRef.current = selectedChat;
     if (selectedChat) {
@@ -235,7 +314,7 @@ function Chat() {
     }
   }, [selectedChat, markChatAsRead]);
 
-  // 1. Auth setup & load chats
+  // Auth setup & load chats
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (!storedUser) {
@@ -250,7 +329,7 @@ function Chat() {
     }
   }, []);
 
-  // 2. Socket.io init
+  // Socket.io init
   useEffect(() => {
     if (!currentUser) return;
     const socketInstance = io(ENDPOINT);
@@ -260,7 +339,7 @@ function Chat() {
     return () => socketInstance.disconnect();
   }, [currentUser]);
 
-  // 3. Socket message & status handlers
+  // Socket handlers
   useEffect(() => {
     if (!socket) return;
 
@@ -279,7 +358,6 @@ function Chat() {
         });
       }
 
-      // Update sidebar latest message & order
       setChats((prev) => {
         const updated = prev.map((c) =>
           c._id === receivedMsg.chat ? { ...c, latestMessage: receivedMsg } : c
@@ -349,12 +427,12 @@ function Chat() {
     };
   }, [socket, markChatAsRead]);
 
-  // 4. Auto scroll
+  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping, pendingFile, uploading]);
 
-  // 5. Fetch chats
+  // Fetch chats
   const fetchChats = async (token) => {
     try {
       const { data } = await axios.get("http://localhost:5000/api/chat", {
@@ -366,7 +444,7 @@ function Chat() {
     }
   };
 
-  // 6. Fetch messages
+  // Fetch messages
   const fetchMessages = async (chatId) => {
     if (!currentUser) return;
     try {
@@ -381,7 +459,7 @@ function Chat() {
     }
   };
 
-  // 7. Sidebar user search (debounced)
+  // Sidebar user search (debounced)
   useEffect(() => {
     if (!currentUser) return;
     const searchUsers = async () => {
@@ -400,7 +478,7 @@ function Chat() {
     return () => clearTimeout(t);
   }, [searchQuery, currentUser]);
 
-  // 8. Group modal user search (debounced)
+  // Group modal user search (debounced)
   useEffect(() => {
     if (!currentUser || !groupSearch.trim()) { setGroupSearchResults([]); return; }
     const searchUsers = async () => {
@@ -418,7 +496,7 @@ function Chat() {
     return () => clearTimeout(t);
   }, [groupSearch, currentUser]);
 
-  // ─── Drag and Drop Handlers ──────────────────────────────────────────────
+  // Drag and Drop Handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -441,7 +519,7 @@ function Chat() {
     }
   };
 
-  // ─── Process Selected File ────────────────────────────────────────────────
+  // Process Selected File
   const processSelectedFile = (file) => {
     if (file.size > 25 * 1024 * 1024) {
       alert("File size exceeds maximum limit of 25MB.");
@@ -471,7 +549,7 @@ function Chat() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // 9. Open 1-to-1 chat
+  // Open 1-to-1 chat
   const handleSelectUser = async (userId) => {
     if (!currentUser) return;
     try {
@@ -492,13 +570,13 @@ function Chat() {
     }
   };
 
-  // 10. Select existing chat
+  // Select existing chat
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     fetchMessages(chat._id);
   };
 
-  // 11. Typing handler
+  // Typing handler
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
     if (!socket || !selectedChat) return;
@@ -513,7 +591,7 @@ function Chat() {
     }, 2000);
   };
 
-  // 12. Send message (with optional file attachment)
+  // Send message (with optional file attachment)
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser || uploading) return;
@@ -524,7 +602,6 @@ function Chat() {
 
       let uploadedFilePayload = null;
 
-      // Upload file first if attached
       if (pendingFile) {
         const formData = new FormData();
         formData.append("file", pendingFile.file);
@@ -578,7 +655,7 @@ function Chat() {
     }
   };
 
-  // 13. Create group chat
+  // Create group chat
   const handleCreateGroup = async () => {
     if (!groupName.trim() || selectedGroupMembers.length < 2) return;
     setGroupCreating(true);
@@ -606,7 +683,7 @@ function Chat() {
     }
   };
 
-  // 14. Toggle member in group creation
+  // Toggle member in group creation
   const toggleGroupMember = (user) => {
     if (selectedGroupMembers.some((m) => m._id === user._id)) {
       setSelectedGroupMembers((prev) => prev.filter((m) => m._id !== user._id));
@@ -615,7 +692,7 @@ function Chat() {
     }
   };
 
-  // 15. Leave group
+  // Leave group
   const handleLeaveGroup = async () => {
     if (!selectedChat || !currentUser) return;
     if (!window.confirm(`Leave "${selectedChat.chatName}"?`)) return;
@@ -633,13 +710,13 @@ function Chat() {
     }
   };
 
-  // 16. Logout
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     window.location.href = "/";
   };
 
-  // 17. Helpers
+  // Helpers
   const getRecipient = (chatUsers) => {
     if (!currentUser || !chatUsers) return {};
     return chatUsers[0]._id === currentUser.user._id ? chatUsers[1] : chatUsers[0];
@@ -651,9 +728,8 @@ function Chat() {
     return getRecipient(chat.users)?.name || "Unknown";
   };
 
-  const getChatAvatar = (chat) => {
+  const getChatAvatarText = (chat) => {
     if (!chat) return "?";
-    if (chat.isGroupChat) return "👥";
     return getRecipient(chat.users)?.name?.charAt(0).toUpperCase() || "?";
   };
 
@@ -695,15 +771,42 @@ function Chat() {
     );
   };
 
-  // Helper for rendering latest message in sidebar
-  const getSidebarMessageText = (msg) => {
+function CameraIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" style={{ flexShrink: 0 }}>
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
+  const getSidebarMessageContent = (msg) => {
     if (!msg) return "No messages yet";
     if (msg.content) return msg.content;
     if (msg.file) {
-      if (msg.file.fileType === "image") return "📷 Photo";
-      if (msg.file.fileType === "video") return "🎥 Video";
-      if (msg.file.fileType === "audio") return "🎵 Audio note";
-      return `📄 ${msg.file.fileName || "Attachment"}`;
+      const type = msg.file.fileType;
+      return (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+          {type === "image" ? (
+            <CameraIcon size={12} color="var(--accent-text)" />
+          ) : type === "video" ? (
+            <VideoIcon size={12} color="var(--accent-text)" />
+          ) : type === "audio" ? (
+            <AudioIcon size={12} color="var(--accent-text)" />
+          ) : (
+            <FileTextIcon size={12} color="var(--accent-text)" />
+          )}
+          <span>
+            {type === "image"
+              ? "Photo"
+              : type === "video"
+              ? "Video"
+              : type === "audio"
+              ? "Audio note"
+              : msg.file.fileName || "Document"}
+          </span>
+        </span>
+      );
     }
     return "Attachment";
   };
@@ -714,12 +817,14 @@ function Chat() {
       {mediaLightbox && (
         <div className="lightbox-overlay" onClick={() => setMediaLightbox(null)}>
           <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <button className="lightbox-close-btn" onClick={() => setMediaLightbox(null)}>✕</button>
+            <button className="lightbox-close-btn" onClick={() => setMediaLightbox(null)}>
+              <CrossIcon size={16} />
+            </button>
             <img src={mediaLightbox.url} alt={mediaLightbox.fileName} className="lightbox-image" />
             <div className="lightbox-footer">
               <span className="lightbox-filename">{mediaLightbox.fileName}</span>
               <a href={mediaLightbox.url} download={mediaLightbox.fileName} target="_blank" rel="noopener noreferrer" className="lightbox-download-link">
-                📥 Download
+                <DownloadIcon size={14} /> Download
               </a>
             </div>
           </div>
@@ -730,7 +835,7 @@ function Chat() {
       {showGroupModal && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowGroupModal(false); }}>
           <div className="modal-card">
-            <h3 className="modal-title">✨ Create New Group</h3>
+            <h3 className="modal-title">Create New Group</h3>
 
             <input
               className="modal-input"
@@ -744,7 +849,9 @@ function Chat() {
                 {selectedGroupMembers.map((u) => (
                   <span key={u._id} className="member-chip">
                     {u.name}
-                    <button className="chip-remove" onClick={() => toggleGroupMember(u)}>✕</button>
+                    <button className="chip-remove" onClick={() => toggleGroupMember(u)}>
+                      <CrossIcon size={10} />
+                    </button>
                   </span>
                 ))}
               </div>
@@ -775,7 +882,9 @@ function Chat() {
                         <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{user.email}</div>
                       </div>
                       {isSelected && (
-                        <span style={{ marginLeft: "auto", color: "var(--accent)", fontSize: "0.9rem" }}>✓</span>
+                        <span style={{ marginLeft: "auto" }}>
+                          <CheckIcon size={16} />
+                        </span>
                       )}
                     </li>
                   );
@@ -806,13 +915,13 @@ function Chat() {
       <div className="chat-container">
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
-          {/* ── TOP: Brand + New Group ── */}
+          {/* TOP: Brand + New Group */}
           <div className="sidebar-top">
             <LoopChatLogo size={24} textSize="1rem" />
             <button className="new-group-btn" onClick={() => setShowGroupModal(true)}>+ Group</button>
           </div>
 
-          {/* ── MIDDLE: Search + Chat list ── */}
+          {/* MIDDLE: Search + Chat list */}
           <div className="sidebar-search">
             <div className="search-input-wrapper">
               <input
@@ -823,7 +932,9 @@ function Chat() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
-                <button className="search-clear" onClick={() => setSearchQuery("")}>✕</button>
+                <button className="search-clear" onClick={() => setSearchQuery("")}>
+                  <CrossIcon size={12} />
+                </button>
               )}
             </div>
           </div>
@@ -867,7 +978,7 @@ function Chat() {
                         onClick={() => handleSelectChat(chat)}
                       >
                         <div className={`avatar ${chat.isGroupChat ? "avatar-group" : online ? "avatar-online" : ""}`}>
-                          {getChatAvatar(chat)}
+                          {chat.isGroupChat ? <UsersIcon size={16} /> : getChatAvatarText(chat)}
                         </div>
                         <div className="item-details">
                           <div className="item-name-row">
@@ -883,7 +994,7 @@ function Chat() {
                             <span className="item-msg">
                               {chatNotifications.length > 0 ? (
                                 <span style={{ color: "var(--accent)", fontWeight: "500" }}>
-                                  {getSidebarMessageText(chatNotifications[chatNotifications.length - 1])}
+                                  {getSidebarMessageContent(chatNotifications[chatNotifications.length - 1])}
                                 </span>
                               ) : chat.latestMessage ? (
                                 (() => {
@@ -902,7 +1013,8 @@ function Chat() {
                                       {isMe && !chat.isGroupChat && (
                                         <TickIcon tickState={sidebarTickState} size={8} />
                                       )}
-                                      <span>{isMe ? "You" : senderName}: {getSidebarMessageText(chat.latestMessage)}</span>
+                                      <span>{isMe ? "You:" : `${senderName}:`}</span>
+                                      {getSidebarMessageContent(chat.latestMessage)}
                                     </span>
                                   );
                                 })()
@@ -928,7 +1040,7 @@ function Chat() {
             )}
           </div>
 
-          {/* ── BOTTOM: User profile footer ── */}
+          {/* BOTTOM: User profile footer */}
           <div className="sidebar-profile-footer">
             <div className="avatar avatar-online">
               {currentUser?.user?.name?.charAt(0).toUpperCase() || "U"}
@@ -955,11 +1067,7 @@ function Chat() {
           {isDragging && (
             <div className="drag-drop-overlay">
               <div className="drag-drop-card">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
+                <FileTextIcon size={44} color="var(--accent-text)" />
                 <h3>Drop file to send</h3>
                 <p>Images, videos, audio, or documents up to 25MB</p>
               </div>
@@ -972,7 +1080,7 @@ function Chat() {
               <div className="chat-header">
                 <div className="chat-user-info">
                   <div className={`avatar ${selectedChat.isGroupChat ? "avatar-group" : isRecipientOnline(selectedChat) ? "avatar-online" : ""}`}>
-                    {getChatAvatar(selectedChat)}
+                    {selectedChat.isGroupChat ? <UsersIcon size={18} /> : getChatAvatarText(selectedChat)}
                   </div>
                   <div className="chat-user-details">
                     <span className="chat-user-name">{getChatName(selectedChat)}</span>
@@ -986,7 +1094,8 @@ function Chat() {
                           );
                           return (
                             <span key={u._id} className={`group-member-tag ${isAdmin ? "admin-tag" : ""}`}>
-                              {isAdmin ? "👑 " : ""}{u.name}
+                              {isAdmin && <CrownIcon size={11} />}
+                              {u.name}
                             </span>
                           );
                         })}
@@ -1121,7 +1230,13 @@ function Chat() {
                         <img src={pendingFile.previewUrl} alt="Preview" className="pending-thumb" />
                       ) : (
                         <div className="pending-doc-icon">
-                          {pendingFile.fileType === "video" ? "🎥" : pendingFile.fileType === "audio" ? "🎵" : "📄"}
+                          {pendingFile.fileType === "video" ? (
+                            <VideoIcon size={20} color="var(--accent-text)" />
+                          ) : pendingFile.fileType === "audio" ? (
+                            <AudioIcon size={20} color="var(--accent-text)" />
+                          ) : (
+                            <FileTextIcon size={20} color="var(--accent-text)" />
+                          )}
                         </div>
                       )}
                       <div className="pending-details">
@@ -1130,7 +1245,7 @@ function Chat() {
                       </div>
                     </div>
                     <button type="button" className="pending-remove-btn" onClick={clearPendingFile} title="Remove attachment">
-                      ✕
+                      <CrossIcon size={12} />
                     </button>
                   </div>
                 )}
@@ -1181,7 +1296,11 @@ function Chat() {
             </>
           ) : (
             <div className="chat-placeholder">
-              <div className="placeholder-icon">💬</div>
+              <div className="placeholder-icon">
+                <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="1.5">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
               <h3 className="placeholder-title">Select a chat to start looping</h3>
               <p style={{ maxWidth: "340px", fontSize: "0.95rem" }}>
                 Choose a chat from the sidebar, search for someone to message, or click <strong style={{ color: "var(--accent-purple)" }}>+ Group</strong> to start a group conversation.

@@ -168,9 +168,16 @@ function OTPVerification({ email, onSuccess, onBack }) {
             color: "var(--text-3)",
             fontSize: "0.82rem",
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.4rem",
           }}
         >
-          ← Back to Registration
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          Back to Registration
         </button>
       </div>
     </div>
