@@ -205,13 +205,18 @@ function TickIcon({ tickState, size = 9 }) {
 }
 
 // ─── Render File Attachment inside Chat Bubble ──────────────────────────────
-function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState, showTimeOverlay, isGroupChat }) {
+function AttachmentView({ file, isSentByMe, onOpenLightbox, onToggleMenu, timeText, tickState, showTimeOverlay, isGroupChat }) {
   if (!file || !file.url) return null;
   const fullUrl = `http://localhost:5000${file.url}`;
 
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    if (onToggleMenu) onToggleMenu();
+  };
+
   if (file.fileType === "image") {
     return (
-      <div className="chat-media-image-wrapper" onClick={() => onOpenLightbox(file)}>
+      <div className="chat-media-image-wrapper" onClick={() => onOpenLightbox(file)} onDoubleClick={handleDoubleClick}>
         <img src={fullUrl} alt={file.fileName || "Image"} className="chat-media-image" />
         <div className="chat-media-hover-overlay">
           <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
@@ -230,7 +235,7 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
 
   if (file.fileType === "video") {
     return (
-      <div className="chat-media-video-wrapper">
+      <div className="chat-media-video-wrapper" onDoubleClick={handleDoubleClick}>
         <video src={fullUrl} controls className="chat-media-video" />
         {showTimeOverlay && (
           <div className="media-time-badge">
@@ -244,7 +249,7 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
 
   if (file.fileType === "audio") {
     return (
-      <div className="chat-media-audio-wrapper">
+      <div className="chat-media-audio-wrapper" onDoubleClick={handleDoubleClick}>
         <audio src={fullUrl} controls className="chat-media-audio" />
         {showTimeOverlay && (
           <div className="media-time-badge inline-badge">
@@ -256,9 +261,9 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
     );
   }
 
-  // Fallback / Document Card (PDF, ZIP, DOCX)
+  // Fallback / Document Card (PDF, ZIP, DOCX, TXT)
   return (
-    <div className={`chat-doc-card ${isSentByMe ? "sent-doc" : "received-doc"}`}>
+    <div className={`chat-doc-card ${isSentByMe ? "sent-doc" : "received-doc"}`} onDoubleClick={handleDoubleClick}>
       <div className="doc-icon-container">
         <FileTextIcon size={24} />
       </div>
@@ -274,7 +279,7 @@ function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState,
           )}
         </div>
       </div>
-      <a href={fullUrl} download={file.fileName} target="_blank" rel="noopener noreferrer" className="doc-download-btn" title="Download file">
+      <a href={fullUrl} download={file.fileName} target="_blank" rel="noopener noreferrer" className="doc-download-btn" title="Download file" onClick={(e) => e.stopPropagation()}>
         <DownloadIcon size={16} />
       </a>
     </div>
@@ -290,8 +295,6 @@ function Chat() {
 
   // Attachment & Media state
   const [pendingFile, setPendingFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [mediaLightbox, setMediaLightbox] = useState(null);
   const fileInputRef = useRef(null);
@@ -489,7 +492,7 @@ function Chat() {
   // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping, pendingFile, uploading]);
+  }, [messages, isTyping, pendingFile]);
 
   // Fetch chats
   const fetchChats = async (token) => {
@@ -650,19 +653,15 @@ function Chat() {
     }, 2000);
   };
 
-  // Send message (with optional file attachment)
+  // Send message (clean & instant for both text and file attachments)
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser || uploading) return;
+    if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser) return;
 
     try {
       let uploadedFilePayload = null;
 
-      // Only trigger upload progress state if a file is attached
       if (pendingFile) {
-        setUploading(true);
-        setUploadProgress(0);
-
         const formData = new FormData();
         formData.append("file", pendingFile.file);
 
@@ -670,10 +669,6 @@ function Chat() {
           headers: {
             Authorization: `Bearer ${currentUser.token}`,
             "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percent);
           },
         });
 
@@ -709,9 +704,6 @@ function Chat() {
     } catch (err) {
       console.error("Error sending message:", err);
       alert("Failed to send message/file. Please try again.");
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -1423,7 +1415,7 @@ function Chat() {
                               file={msg.file}
                               isSentByMe={isSentByMe}
                               onOpenLightbox={(f) => setMediaLightbox({ url: `http://localhost:5000${f.url}`, fileType: f.fileType, fileName: f.fileName })}
-                              onDelete={() => handleDeleteMessage(msg._id)}
+                              onToggleMenu={() => setActiveMenuMsgId(isMenuOpen ? null : msg._id)}
                               timeText={formatTime(msg.createdAt)}
                               tickState={tickState}
                               showTimeOverlay={isMediaOnly}
@@ -1503,21 +1495,12 @@ function Chat() {
                   </div>
                 )}
 
-                {/* Upload Progress Bar */}
-                {uploading && (
-                  <div className="upload-progress-bar-container">
-                    <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }} />
-                    <span className="upload-progress-text">Uploading... {uploadProgress}%</span>
-                  </div>
-                )}
-
                 <form onSubmit={handleSendMessage} className="input-form">
                   <button
                     type="button"
                     className="attach-button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Attach file or media"
-                    disabled={uploading}
                   >
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
@@ -1536,10 +1519,9 @@ function Chat() {
                     }
                     value={newMessage}
                     onChange={handleInputChange}
-                    disabled={uploading}
                   />
 
-                  <button type="submit" className="send-button" disabled={uploading || (!newMessage.trim() && !pendingFile)}>
+                  <button type="submit" className="send-button" disabled={!newMessage.trim() && !pendingFile}>
                     <svg viewBox="0 0 24 24">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>
