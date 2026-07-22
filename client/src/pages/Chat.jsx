@@ -251,6 +251,24 @@ function MicIcon({ size = 18, color = "currentColor" }) {
   );
 }
 
+function SendIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -2303,9 +2321,9 @@ function Chat() {
                         type="button"
                         className="recording-cancel-btn"
                         onClick={cancelRecording}
-                        title="Cancel recording"
+                        title="Discard recording"
                       >
-                        <CrossIcon size={14} />
+                        <TrashIcon size={16} />
                       </button>
                       <button
                         type="button"
@@ -2348,19 +2366,7 @@ function Chat() {
                           disabled={!newMessage.trim() && !pendingFile}
                           title="Send message"
                         >
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#ffffff"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <line x1="22" y1="2" x2="11" y2="13" />
-                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                          </svg>
+                          <SendIcon size={18} color="#ffffff" />
                         </button>
                       )}
                     </>
