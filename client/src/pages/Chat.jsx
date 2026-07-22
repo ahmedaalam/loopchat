@@ -23,6 +23,82 @@ function PhoneCallIcon({ size = 18, color = "currentColor" }) {
     </svg>
   );
 }
+
+function PhoneOffIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67M22 2L2 22" />
+    </svg>
+  );
+}
+
+function VideoOffIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="1" y1="1" x2="23" y2="23" />
+      <path d="M21 21l-4.35-4.35M23 7l-7 5 7 5V7z" />
+      <path d="M16 16a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7" />
+    </svg>
+  );
+}
+
+function MissedCallIcon({ size = 20 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#ef4444"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="17" y1="7" x2="7" y2="17" />
+      <polyline points="17 17 7 17 7 7" />
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
+    </svg>
+  );
+}
+
+function MissedVideoCallIcon({ size = 20 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#ef4444"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="17" y1="7" x2="7" y2="17" />
+      <polyline points="17 17 7 17 7 7" />
+      <polygon points="23 7 16 12 23 17 23 7" />
+      <rect x="1" y="5" width="13" height="14" rx="2" ry="2" />
+    </svg>
+  );
+}
+
 function UsersIcon({ size = 16, color = "currentColor" }) {
   return (
     <svg
@@ -294,6 +370,22 @@ function formatBytes(bytes, decimals = 1) {
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+}
+
+// ─── Sidebar Message Preview Helper ──────────────────────────────────────────
+function getSidebarMessageContent(message) {
+  if (!message) return "";
+  if (message.callInfo && message.callInfo.isCall) {
+    return message.callInfo.isVideoCall ? "↙ Missed video call" : "↙ Missed voice call";
+  }
+  if (message.content) return message.content;
+  if (message.file) {
+    if (message.file.fileType === "image") return "📷 Photo";
+    if (message.file.fileType === "video") return "📹 Video";
+    if (message.file.fileType === "audio") return "🎤 Voice note";
+    return `📄 ${message.file.fileName || "File"}`;
+  }
+  return "Message";
 }
 
 // ─── Web Audio notification beep (no audio file needed) ───────────────────────
@@ -675,6 +767,49 @@ function Chat() {
     return () => socketInstance.disconnect();
   }, [currentUser]);
 
+  // Helper: Get recipient user in DM chat
+  const getRecipientUser = useCallback(
+    (chatUsers) => {
+      if (!currentUser || !chatUsers || !Array.isArray(chatUsers)) return null;
+      return chatUsers.find(
+        (u) => (typeof u === "object" ? u._id : u) !== currentUser.user._id
+      );
+    },
+    [currentUser]
+  );
+
+  // WebRTC Cleanup Helper
+  const cleanupCall = useCallback(() => {
+    if (localStream) {
+      localStream.getTracks().forEach((t) => t.stop());
+      setLocalStream(null);
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((t) => t.stop());
+      setRemoteStream(null);
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    setCallDuration(0);
+    setIsMicMuted(false);
+    setIsVideoOff(false);
+    setCallState({
+      isCalling: false,
+      isIncoming: false,
+      isConnected: false,
+      callerName: "",
+      isVideoCall: false,
+      peerId: null,
+      offer: null,
+    });
+  }, [localStream, remoteStream]);
+
   // Socket handlers
   useEffect(() => {
     if (!socket) return;
@@ -869,39 +1004,10 @@ function Chat() {
     };
   }, [socket, markChatAsRead, cleanupCall]);
 
-  // WebRTC Cleanup Helper
-  function cleanupCall() {
-    if (localStream) {
-      localStream.getTracks().forEach((t) => t.stop());
-      setLocalStream(null);
-    }
-    if (remoteStream) {
-      remoteStream.getTracks().forEach((t) => t.stop());
-      setRemoteStream(null);
-    }
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
-    }
-    clearInterval(callTimerRef.current);
-    setCallDuration(0);
-    setIsMicMuted(false);
-    setIsVideoOff(false);
-    setCallState({
-      isCalling: false,
-      isIncoming: false,
-      isConnected: false,
-      callerName: "",
-      isVideoCall: false,
-      peerId: null,
-      offer: null,
-    });
-  }
-
   // Initiate Call
   const initiateCall = async (isVideo) => {
     if (!selectedChat || selectedChat.isGroupChat || !currentUser) return;
-    const recipient = getRecipient(selectedChat.users);
+    const recipient = getRecipientUser(selectedChat.users);
     if (!recipient || !recipient._id) {
       alert("Recipient is unavailable for call.");
       return;
@@ -2483,33 +2589,80 @@ function Chat() {
                             </div>
                           )}
 
-                          {/* Render File Attachment if present */}
-                          {msg.file && (
-                            <AttachmentView
-                              file={msg.file}
-                              isSentByMe={isSentByMe}
-                              onOpenLightbox={(f) =>
-                                setMediaLightbox({
-                                  url: `http://localhost:5000${f.url}`,
-                                  fileType: f.fileType,
-                                  fileName: f.fileName,
-                                })
-                              }
-                              onToggleMenu={() =>
-                                setActiveMenuMsgId(isMenuOpen ? null : msg._id)
-                              }
-                              timeText={formatTime(msg.createdAt)}
-                              tickState={tickState}
-                              showTimeOverlay={isMediaOnly}
-                              isGroupChat={selectedChat.isGroupChat}
-                            />
-                          )}
-
-                          {/* Render Text Content if present */}
-                          {msg.content && (
-                            <div className="message-text-content">
-                              {msg.content}
+                          {/* Render Missed Call Card if system call message */}
+                          {msg.callInfo?.isCall ? (
+                            <div className="missed-call-card">
+                              <div className="missed-call-icon">
+                                {msg.callInfo.isVideoCall ? (
+                                  <MissedVideoCallIcon size={20} />
+                                ) : (
+                                  <MissedCallIcon size={20} />
+                                )}
+                              </div>
+                              <div className="missed-call-details">
+                                <span className="missed-call-title">
+                                  {msg.callInfo.isVideoCall
+                                    ? "Missed video call"
+                                    : "Missed voice call"}
+                                </span>
+                                <span className="missed-call-sub">
+                                  {formatTime(msg.createdAt)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                className="missed-call-back-btn"
+                                onClick={() => initiateCall(msg.callInfo.isVideoCall)}
+                                title={
+                                  msg.callInfo.isVideoCall
+                                    ? "Start video call back"
+                                    : "Start voice call back"
+                                }
+                              >
+                                {msg.callInfo.isVideoCall ? (
+                                  <>
+                                    <VideoIcon size={14} color="currentColor" />
+                                    <span>Call Back</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <PhoneCallIcon size={14} color="currentColor" />
+                                    <span>Call Back</span>
+                                  </>
+                                )}
+                              </button>
                             </div>
+                          ) : (
+                            <>
+                              {/* Render File Attachment if present */}
+                              {msg.file && (
+                                <AttachmentView
+                                  file={msg.file}
+                                  isSentByMe={isSentByMe}
+                                  onOpenLightbox={(f) =>
+                                    setMediaLightbox({
+                                      url: `http://localhost:5000${f.url}`,
+                                      fileType: f.fileType,
+                                      fileName: f.fileName,
+                                    })
+                                  }
+                                  onToggleMenu={() =>
+                                    setActiveMenuMsgId(isMenuOpen ? null : msg._id)
+                                  }
+                                  timeText={formatTime(msg.createdAt)}
+                                  tickState={tickState}
+                                  showTimeOverlay={isMediaOnly}
+                                  isGroupChat={selectedChat.isGroupChat}
+                                />
+                              )}
+
+                              {/* Render Text Content if present */}
+                              {msg.content && (
+                                <div className="message-text-content">
+                                  {msg.content}
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {!isMediaOnly && (

@@ -2232,3 +2232,72 @@ body {
   color: var(--accent-text);
 }
 
+/* ═══════════════════════════════════════════════════════
+   PREMIUM WHATSAPP-STYLE MISSED CALL CARD
+═══════════════════════════════════════════════════════ */
+.missed-call-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.45rem 0.3rem;
+  min-width: 260px;
+}
+
+.missed-call-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18);
+}
+
+.missed-call-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  flex: 1;
+}
+
+.missed-call-title {
+  font-size: 0.93rem;
+  font-weight: 600;
+  color: #f87171;
+  letter-spacing: -0.01em;
+}
+
+.missed-call-sub {
+  font-size: 0.76rem;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.missed-call-back-btn {
+  margin-left: auto;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--accent-text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.missed-call-back-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 120, 212, 0.4);
+}
+

@@ -39,6 +39,12 @@ const messageSchema = new mongoose.Schema(
         },
       },
     ],
+    callInfo: {
+      isCall: { type: Boolean, default: false },
+      isVideoCall: { type: Boolean, default: false },
+      isMissed: { type: Boolean, default: false },
+      duration: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );
