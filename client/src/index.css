@@ -841,9 +841,23 @@ body {
   width: 18px;
   height: 18px;
   fill: currentColor;
-  transform: rotate(45deg);
-  margin-left: -1px;
-  margin-top: 2px;
+}
+
+.forgot-password-link {
+  background: transparent;
+  border: none;
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+  color: #fff;
 }
 
 /* ═══════════════════════════════════════════════════════

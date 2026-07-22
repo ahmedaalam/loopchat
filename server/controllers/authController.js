@@ -248,3 +248,102 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: error.message || "Server error during login" });
   }
 };
+
+// ─── FORGOT PASSWORD (Send OTP) ───────────────────────────────────────────────
+exports.forgotPassword = async (req, res) => {
+  try {
+    let { email } = req.body;
+
+    const trimmedEmail = email ? String(email).trim().toLowerCase() : "";
+    if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
+      return res.status(400).json({
+        errors: { email: "Please enter a valid email address" },
+        message: "Please enter a valid email address",
+      });
+    }
+
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(404).json({
+        errors: { email: "No account found with this email address" },
+        message: "No account found with this email address",
+      });
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    await sendOTPEmail(trimmedEmail, otp, "reset");
+
+    res.status(200).json({
+      message: "Password reset OTP code sent to your email",
+      email: trimmedEmail,
+    });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: error.message || "Server error during password reset request" });
+  }
+};
+
+// ─── RESET PASSWORD (Verify OTP & Update Password) ───────────────────────────
+exports.resetPassword = async (req, res) => {
+  try {
+    let { email, otp, newPassword } = req.body;
+
+    const errors = {};
+
+    const trimmedEmail = email ? String(email).trim().toLowerCase() : "";
+    const trimmedOtp = otp ? String(otp).trim() : "";
+
+    if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (!trimmedOtp || trimmedOtp.length !== 6) {
+      errors.otp = "Please enter a valid 6-digit OTP code";
+    }
+
+    if (!newPassword || String(newPassword).length < 8) {
+      errors.newPassword = "New password must be at least 8 characters long";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors, message: "Validation failed" });
+    }
+
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.otp || user.otp !== trimmedOtp) {
+      return res.status(400).json({
+        errors: { otp: "Invalid OTP verification code" },
+        message: "Invalid OTP verification code",
+      });
+    }
+
+    if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+      return res.status(400).json({
+        errors: { otp: "OTP code has expired. Please request a new code." },
+        message: "OTP code has expired. Please request a new code.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    res.status(200).json({
+      message: "Password reset successfully! You can now log in with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: error.message || "Server error during password reset" });
+  }
+};

@@ -1,9 +1,18 @@
 const nodemailer = require("nodemailer");
 
-const sendOTPEmail = async (email, otp) => {
+const sendOTPEmail = async (email, otp, type = "verification") => {
+  const isReset = type === "reset";
+  const titleText = isReset ? "Password Reset Request" : "Email Verification";
+  const subjectText = isReset
+    ? `${otp} is your LoopChat password reset code`
+    : `${otp} is your LoopChat verification code`;
+  const bodyText = isReset
+    ? "You requested to reset your password. Use the verification code below to set a new password:"
+    : "Thank you for signing up! Use the verification code below to complete your registration:";
+
   // 1. Console log OTP for local development & testing
   console.log(`\n==========================================`);
-  console.log(`[OTP VERIFICATION CODE]`);
+  console.log(`[${isReset ? "RESET PASSWORD" : "VERIFICATION"} OTP CODE]`);
   console.log(`To: ${email}`);
   console.log(`OTP Code: ${otp}`);
   console.log(`Expires in: 15 minutes`);
@@ -16,7 +25,7 @@ const sendOTPEmail = async (email, otp) => {
 
       if (process.env.EMAIL_SERVICE) {
         transporterConfig = {
-          service: process.env.EMAIL_SERVICE, // e.g. 'gmail'
+          service: process.env.EMAIL_SERVICE,
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
@@ -33,7 +42,6 @@ const sendOTPEmail = async (email, otp) => {
           },
         };
       } else {
-        // Default to Gmail Service
         transporterConfig = {
           service: "gmail",
           auth: {
@@ -48,16 +56,16 @@ const sendOTPEmail = async (email, otp) => {
       const mailOptions = {
         from: `"LoopChat" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: `${otp} is your LoopChat verification code`,
+        subject: subjectText,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #222222; border-radius: 12px; background-color: #0f0f0f; color: #f5f5f5;">
             <div style="text-align: center; margin-bottom: 20px;">
-              <h2 style="color: #60a5fa; margin: 0;">LoopChat</h2>
-              <p style="color: #a3a3a3; font-size: 0.9rem; margin-top: 4px;">Email Verification</p>
+              <h2 style="color: #38bdf8; margin: 0;">LoopChat</h2>
+              <p style="color: #a3a3a3; font-size: 0.9rem; margin-top: 4px;">${titleText}</p>
             </div>
-            <p style="font-size: 15px; color: #d4d4d4; line-height: 1.5;">Thank you for signing up! Use the verification code below to complete your registration:</p>
+            <p style="font-size: 15px; color: #d4d4d4; line-height: 1.5;">${bodyText}</p>
             <div style="text-align: center; margin: 28px 0;">
-              <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #60a5fa; background: #1a1a1a; padding: 14px 28px; border-radius: 10px; border: 1px solid #2563eb; display: inline-block;">${otp}</span>
+              <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #38bdf8; background: #1a1a1a; padding: 14px 28px; border-radius: 10px; border: 1px solid #0078d4; display: inline-block;">${otp}</span>
             </div>
             <p style="font-size: 13px; color: #737373; text-align: center; margin-top: 24px;">This code will expire in 15 minutes. If you did not request this email, please ignore it.</p>
           </div>
