@@ -7,6 +7,8 @@ const {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  clearChat,
+  deleteChat,
 } = require("../controllers/chatController");
 
 router.post("/", protect, accessChat);
@@ -17,5 +19,9 @@ router.post("/group", protect, createGroupChat);
 router.put("/group/rename", protect, renameGroup);
 router.put("/group/add", protect, addToGroup);
 router.put("/group/remove", protect, removeFromGroup);
+
+// Clear & Delete chat routes
+router.put("/:chatId/clear", protect, clearChat);
+router.delete("/:chatId", protect, deleteChat);
 
 module.exports = router;

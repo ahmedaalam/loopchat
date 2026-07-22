@@ -164,3 +164,73 @@ exports.removeFromGroup = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const fs = require("fs");
+const path = require("path");
+const Message = require("../models/Message");
+
+// CLEAR CHAT - deletes all messages in a chat and unlinks physical files
+exports.clearChat = async (req, res) => {
+  const { chatId } = req.params;
+
+  try {
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    const messages = await Message.find({ chat: chatId });
+    for (const msg of messages) {
+      if (msg.file && msg.file.url) {
+        const filename = path.basename(msg.file.url);
+        const filePath = path.join(__dirname, "../uploads", filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, (err) => {
+            if (err) console.error("Failed to delete attachment file from disk:", err);
+          });
+        }
+      }
+    }
+
+    await Message.deleteMany({ chat: chatId });
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: null });
+
+    res.json({ message: "Chat cleared successfully", chatId });
+  } catch (error) {
+    console.error("Clear Chat Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// DELETE CHAT - deletes chat room entirely and all associated messages & files
+exports.deleteChat = async (req, res) => {
+  const { chatId } = req.params;
+
+  try {
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    const messages = await Message.find({ chat: chatId });
+    for (const msg of messages) {
+      if (msg.file && msg.file.url) {
+        const filename = path.basename(msg.file.url);
+        const filePath = path.join(__dirname, "../uploads", filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, (err) => {
+            if (err) console.error("Failed to delete attachment file from disk:", err);
+          });
+        }
+      }
+    }
+
+    await Message.deleteMany({ chat: chatId });
+    await Chat.findByIdAndDelete(chatId);
+
+    res.json({ message: "Chat deleted successfully", chatId });
+  } catch (error) {
+    console.error("Delete Chat Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

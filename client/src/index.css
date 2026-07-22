@@ -1708,6 +1708,50 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   CHAT HEADER 3-DOT ACTION MENU
+═══════════════════════════════════════════════════════ */
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.chat-header-menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  padding: 0.45rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.chat-header-menu-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+.chat-header-dropdown-menu {
+  position: absolute;
+  top: 38px;
+  right: 0;
+  background: #1e1e1e;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+  padding: 0.35rem 0;
+  min-width: 150px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  animation: fadeUp 0.15s var(--ease);
+}
+
+/* ═══════════════════════════════════════════════════════
    LIGHTBOX MODAL
 ═══════════════════════════════════════════════════════ */
 .lightbox-overlay {

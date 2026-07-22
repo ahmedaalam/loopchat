@@ -121,6 +121,16 @@ function ForwardIcon({ size = 14, color = "currentColor" }) {
   );
 }
 
+function MoreVerticalIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="5" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="12" cy="19" r="1" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -301,6 +311,7 @@ function Chat() {
 
   // WhatsApp-style Action Context Menu State
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+  const [showChatHeaderMenu, setShowChatHeaderMenu] = useState(false);
   const [forwardingMsg, setForwardingMsg] = useState(null);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [forwardSearch, setForwardSearch] = useState("");
@@ -328,9 +339,12 @@ function Chat() {
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Close context menu on window click
+  // Close context menus on window click
   useEffect(() => {
-    const handleClickOutside = () => setActiveMenuMsgId(null);
+    const handleClickOutside = () => {
+      setActiveMenuMsgId(null);
+      setShowChatHeaderMenu(false);
+    };
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
@@ -467,6 +481,23 @@ function Chat() {
       );
     };
 
+    const handleChatCleared = ({ chatId }) => {
+      if (selectedChatRef.current?._id === chatId) {
+        setMessages([]);
+      }
+      setChats((prev) =>
+        prev.map((c) => (c._id === chatId ? { ...c, latestMessage: null } : c))
+      );
+    };
+
+    const handleChatDeleted = ({ chatId }) => {
+      if (selectedChatRef.current?._id === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+    };
+
     const handleTyping = (room) => {
       if (selectedChatRef.current?._id === room) setIsTyping(true);
     };
@@ -477,6 +508,8 @@ function Chat() {
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
     socket.on("message deleted", handleMessageDeleted);
+    socket.on("chat cleared", handleChatCleared);
+    socket.on("chat deleted", handleChatDeleted);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
 
@@ -484,6 +517,8 @@ function Chat() {
       socket.off("receive message", handleReceivedMessage);
       socket.off("messages read", handleMessagesRead);
       socket.off("message deleted", handleMessageDeleted);
+      socket.off("chat cleared", handleChatCleared);
+      socket.off("chat deleted", handleChatDeleted);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
     };
@@ -653,7 +688,7 @@ function Chat() {
     }, 2000);
   };
 
-  // Send message (clean & instant for both text and file attachments)
+  // Send message
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser) return;
@@ -736,6 +771,52 @@ function Chat() {
     } catch (err) {
       console.error("Error deleting message:", err);
       alert("Failed to delete message.");
+    }
+  };
+
+  // Clear Chat (WhatsApp style)
+  const handleClearChat = async () => {
+    if (!selectedChat || !currentUser) return;
+    if (!window.confirm(`Clear all messages in "${getChatName(selectedChat)}"? This action cannot be undone.`)) return;
+
+    try {
+      await axios.put(
+        `http://localhost:5000/api/chat/${selectedChat._id}/clear`,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+
+      setMessages([]);
+      setChats((prev) =>
+        prev.map((c) => (c._id === selectedChat._id ? { ...c, latestMessage: null } : c))
+      );
+      socket?.emit("clear chat", { chatId: selectedChat._id });
+      setShowChatHeaderMenu(false);
+    } catch (err) {
+      console.error("Error clearing chat:", err);
+      alert("Failed to clear chat.");
+    }
+  };
+
+  // Delete Chat (WhatsApp style)
+  const handleDeleteChat = async () => {
+    if (!selectedChat || !currentUser) return;
+    if (!window.confirm(`Delete chat with "${getChatName(selectedChat)}"? All messages will be permanently removed.`)) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/api/chat/${selectedChat._id}`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+
+      const deletedChatId = selectedChat._id;
+      setChats((prev) => prev.filter((c) => c._id !== deletedChatId));
+      setSelectedChat(null);
+      setMessages([]);
+      socket?.emit("delete chat", { chatId: deletedChatId });
+      setShowChatHeaderMenu(false);
+    } catch (err) {
+      console.error("Error deleting chat:", err);
+      alert("Failed to delete chat.");
     }
   };
 
@@ -1295,11 +1376,41 @@ function Chat() {
                   </div>
                 </div>
 
-                {selectedChat.isGroupChat && (
-                  <button className="leave-group-btn" onClick={handleLeaveGroup}>
-                    Leave Group
-                  </button>
-                )}
+                <div className="chat-header-actions">
+                  {selectedChat.isGroupChat && (
+                    <button className="leave-group-btn" onClick={handleLeaveGroup}>
+                      Leave Group
+                    </button>
+                  )}
+
+                  {/* 3-Dot WhatsApp Header Action Menu */}
+                  <div style={{ position: "relative" }}>
+                    <button
+                      type="button"
+                      className="chat-header-menu-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowChatHeaderMenu((prev) => !prev);
+                      }}
+                      title="More options"
+                    >
+                      <MoreVerticalIcon size={18} />
+                    </button>
+
+                    {showChatHeaderMenu && (
+                      <div className="chat-header-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="context-menu-item" onClick={handleClearChat}>
+                          <TrashIcon size={14} />
+                          <span>Clear Chat</span>
+                        </button>
+                        <button type="button" className="context-menu-item danger" onClick={handleDeleteChat}>
+                          <TrashIcon size={14} />
+                          <span>Delete Chat</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Messages pane */}
