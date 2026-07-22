@@ -15,10 +15,11 @@
   --border:      #1f1f1f;
   --border-soft: rgba(255,255,255,0.04);
 
-  /* Accent — iOS/macOS Blue */
-  --accent:      #2563eb;
-  --accent-dim:  rgba(37,99,235,0.15);
-  --accent-text: #60a5fa;
+  /* Accent — Antigravity Code Editor Signature Blue */
+  --accent:      #0078d4;
+  --accent-hover:#0066b8;
+  --accent-dim:  rgba(0, 120, 212, 0.18);
+  --accent-text: #38bdf8;
 
   /* Text */
   --text-1:      #f5f5f5;   /* primary */
@@ -30,7 +31,7 @@
   --danger:      #ef4444;
 
   /* Bubbles */
-  --bubble-out:  #2563eb;
+  --bubble-out:  #0078d4;
   --bubble-in:   #1a1a1a;
 
   /* Misc */

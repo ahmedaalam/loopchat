@@ -22,8 +22,8 @@ function LoopChatLogo({ size = 36, showText = true, textSize = "1.25rem" }) {
       >
         <defs>
           <linearGradient id="loopGradLogo" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#60a5fa" />
-            <stop offset="100%" stopColor="#2563eb" />
+            <stop offset="0%" stopColor="#38bdf8" />
+            <stop offset="100%" stopColor="#0078d4" />
           </linearGradient>
         </defs>
         <path
