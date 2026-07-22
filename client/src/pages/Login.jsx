@@ -19,7 +19,7 @@ function Login() {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Steps: 'login' | 'forgot-email' | 'reset-password' | 'verify'
+  // Steps: 'login' | 'forgot-email' | 'forgot-otp' | 'reset-new-password' | 'verify'
   const [step, setStep] = useState("login");
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
 
@@ -59,12 +59,20 @@ function Login() {
     return Object.keys(errors).length === 0;
   };
 
-  const validateResetPassword = () => {
+  const validateForgotOTP = () => {
     const errors = {};
+    const trimmedOtp = resetOtp.trim();
 
-    if (!resetOtp.trim() || resetOtp.trim().length !== 6) {
+    if (!trimmedOtp || trimmedOtp.length !== 6) {
       errors.resetOtp = "Please enter a valid 6-digit OTP code";
     }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateNewPassword = () => {
+    const errors = {};
 
     if (!newPassword) {
       errors.newPassword = "New password is required";
@@ -95,7 +103,7 @@ function Login() {
     if (field === "confirmPassword") setConfirmPassword(value);
   };
 
-  // Submit Login
+  // 1. Submit Login
   const submitLoginHandler = async (e) => {
     e.preventDefault();
     setGeneralError("");
@@ -128,7 +136,7 @@ function Login() {
     }
   };
 
-  // Request Forgot Password OTP
+  // 2. Step 1: Request Forgot Password OTP
   const submitForgotEmailHandler = async (e) => {
     e.preventDefault();
     setGeneralError("");
@@ -143,26 +151,55 @@ function Login() {
         email: trimmedEmail,
       });
 
-      setSuccessMessage("Password reset OTP code has been sent to your email!");
-      setStep("reset-password");
+      setSuccessMessage("Verification OTP code sent to your email!");
+      setStep("forgot-otp");
     } catch (err) {
       const resData = err.response?.data;
       if (resData?.errors) {
         setFieldErrors(resData.errors);
       } else {
-        setGeneralError(resData?.message || "Failed to send password reset email.");
+        setGeneralError(resData?.message || "Failed to send reset code. Please check your email.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Submit New Password with OTP
-  const submitResetPasswordHandler = async (e) => {
+  // 3. Step 2: Verify OTP Code ONLY
+  const submitVerifyOTPHandler = async (e) => {
     e.preventDefault();
     setGeneralError("");
 
-    if (!validateResetPassword()) return;
+    if (!validateForgotOTP()) return;
+
+    setLoading(true);
+
+    try {
+      await axios.post("http://localhost:5000/api/auth/verify-reset-otp", {
+        email: resetEmail.trim().toLowerCase(),
+        otp: resetOtp.trim(),
+      });
+
+      setSuccessMessage("OTP verified! Please set your new password below.");
+      setStep("reset-new-password");
+    } catch (err) {
+      const resData = err.response?.data;
+      if (resData?.errors) {
+        setFieldErrors(resData.errors);
+      } else {
+        setGeneralError(resData?.message || "Invalid or expired OTP code.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. Step 3: Update New Password
+  const submitNewPasswordHandler = async (e) => {
+    e.preventDefault();
+    setGeneralError("");
+
+    if (!validateNewPassword()) return;
 
     setLoading(true);
 
@@ -174,7 +211,7 @@ function Login() {
       });
 
       setEmail(resetEmail);
-      setSuccessMessage(data.message || "Password reset successfully! You can now sign in.");
+      setSuccessMessage(data.message || "Password updated successfully! Please sign in with your new password.");
       setStep("login");
       setPassword("");
       setResetOtp("");
@@ -185,7 +222,7 @@ function Login() {
       if (resData?.errors) {
         setFieldErrors(resData.errors);
       } else {
-        setGeneralError(resData?.message || "Failed to reset password. Please check your OTP.");
+        setGeneralError(resData?.message || "Failed to update password.");
       }
     } finally {
       setLoading(false);
@@ -200,7 +237,7 @@ function Login() {
       await axios.post("http://localhost:5000/api/auth/forgot-password", {
         email: resetEmail.trim().toLowerCase(),
       });
-      setSuccessMessage("A fresh OTP reset code has been sent to your email!");
+      setSuccessMessage("A fresh OTP verification code has been sent to your email!");
     } catch (err) {
       setGeneralError(err.response?.data?.message || "Failed to resend OTP code.");
     } finally {
@@ -226,7 +263,11 @@ function Login() {
             <h2 className="auth-title">Welcome Back</h2>
             <p className="auth-subtitle">Sign in to continue to LoopChat</p>
             
-            {successMessage && <div style={{ background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", color: "#4ade80", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1rem" }}>{successMessage}</div>}
+            {successMessage && (
+              <div style={{ background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", color: "#4ade80", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                {successMessage}
+              </div>
+            )}
             {generalError && <div className="auth-alert-error">{generalError}</div>}
 
             <form onSubmit={submitLoginHandler} className="auth-form" noValidate>
@@ -286,11 +327,11 @@ function Login() {
           </>
         )}
 
-        {/* ─── 2. FORGOT PASSWORD: ENTER EMAIL ─── */}
+        {/* ─── 2. FORGOT PASSWORD STEP 1: ENTER REGISTERED EMAIL ─── */}
         {step === "forgot-email" && (
           <>
             <h2 className="auth-title">Forgot Password</h2>
-            <p className="auth-subtitle">Enter your registered email address to receive a 6-digit OTP code.</p>
+            <p className="auth-subtitle">Enter your registered email address to receive a 6-digit OTP verification code.</p>
 
             {generalError && <div className="auth-alert-error">{generalError}</div>}
 
@@ -310,7 +351,7 @@ function Login() {
               </div>
 
               <button type="submit" className="auth-button" disabled={loading}>
-                {loading ? "Sending OTP Code..." : "Send Reset Code"}
+                {loading ? "Sending Code..." : "Send Reset Code"}
               </button>
             </form>
 
@@ -330,17 +371,20 @@ function Login() {
           </>
         )}
 
-        {/* ─── 3. RESET PASSWORD: ENTER OTP & NEW PASSWORD ─── */}
-        {step === "reset-password" && (
+        {/* ─── 3. FORGOT PASSWORD STEP 2: FILL OTP CODE ONLY ─── */}
+        {step === "forgot-otp" && (
           <>
-            <h2 className="auth-title">Reset Password</h2>
-            <p className="auth-subtitle">Enter the 6-digit code sent to <strong style={{ color: "var(--accent-text)" }}>{resetEmail}</strong> and your new password.</p>
+            <h2 className="auth-title">Enter Verification Code</h2>
+            <p className="auth-subtitle">Enter the 6-digit OTP code sent to <strong style={{ color: "var(--accent-text)" }}>{resetEmail}</strong>.</p>
 
-            {successMessage && <div style={{ background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", color: "#4ade80", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1rem" }}>{successMessage}</div>}
+            {successMessage && (
+              <div style={{ background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", color: "#4ade80", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                {successMessage}
+              </div>
+            )}
             {generalError && <div className="auth-alert-error">{generalError}</div>}
 
-            <form onSubmit={submitResetPasswordHandler} className="auth-form" noValidate>
-              {/* OTP Code */}
+            <form onSubmit={submitVerifyOTPHandler} className="auth-form" noValidate>
               <div className="input-group">
                 <label className="input-label">6-Digit OTP Code</label>
                 <input
@@ -349,14 +393,59 @@ function Login() {
                   type="text"
                   maxLength={6}
                   value={resetOtp}
-                  onChange={(e) => handleInputChange("resetOtp", e.target.value)}
-                  style={{ letterSpacing: "4px", fontWeight: "600" }}
+                  onChange={(e) => handleInputChange("resetOtp", e.target.value.replace(/[^0-9]/g, ""))}
+                  style={{ letterSpacing: "6px", fontWeight: "700", textAlign: "center", fontSize: "1.2rem" }}
+                  autoFocus
                 />
                 {fieldErrors.resetOtp && (
                   <span className="field-error">{fieldErrors.resetOtp}</span>
                 )}
               </div>
 
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading ? "Verifying Code..." : "Verify OTP Code"}
+              </button>
+            </form>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1.25rem" }}>
+              <button
+                type="button"
+                className="forgot-password-link"
+                onClick={() => {
+                  setStep("forgot-email");
+                  setFieldErrors({});
+                  setGeneralError("");
+                }}
+              >
+                ← Back
+              </button>
+
+              <button
+                type="button"
+                className="forgot-password-link"
+                onClick={handleResendResetOTP}
+                disabled={loading}
+              >
+                Resend OTP
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ─── 4. FORGOT PASSWORD STEP 3: SET NEW PASSWORD UI ─── */}
+        {step === "reset-new-password" && (
+          <>
+            <h2 className="auth-title">Set New Password</h2>
+            <p className="auth-subtitle">Create a new strong password for your account.</p>
+
+            {successMessage && (
+              <div style={{ background: "rgba(34, 197, 94, 0.15)", border: "1px solid rgba(34, 197, 94, 0.3)", color: "#4ade80", padding: "0.75rem", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                {successMessage}
+              </div>
+            )}
+            {generalError && <div className="auth-alert-error">{generalError}</div>}
+
+            <form onSubmit={submitNewPasswordHandler} className="auth-form" noValidate>
               {/* New Password */}
               <div className="input-group">
                 <label className="input-label">New Password</label>
@@ -388,36 +477,27 @@ function Login() {
               </div>
 
               <button type="submit" className="auth-button" disabled={loading}>
-                {loading ? "Resetting Password..." : "Reset Password"}
+                {loading ? "Updating Password..." : "Update Password"}
               </button>
             </form>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1.25rem" }}>
+            <p className="auth-link">
               <button
                 type="button"
                 className="forgot-password-link"
                 onClick={() => {
-                  setStep("forgot-email");
+                  setStep("login");
                   setFieldErrors({});
                   setGeneralError("");
                 }}
               >
-                ← Back
+                ← Cancel
               </button>
-
-              <button
-                type="button"
-                className="forgot-password-link"
-                onClick={handleResendResetOTP}
-                disabled={loading}
-              >
-                Resend OTP
-              </button>
-            </div>
+            </p>
           </>
         )}
 
-        {/* ─── 4. VERIFY REGISTRATION OTP STEP ─── */}
+        {/* ─── 5. VERIFY REGISTRATION OTP STEP ─── */}
         {step === "verify" && (
           <OTPVerification
             email={unverifiedEmail}

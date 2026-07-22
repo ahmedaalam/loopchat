@@ -287,6 +287,47 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// ─── VERIFY RESET OTP ─────────────────────────────────────────────────────────
+exports.verifyResetOTP = async (req, res) => {
+  try {
+    let { email, otp } = req.body;
+
+    const trimmedEmail = email ? String(email).trim().toLowerCase() : "";
+    const trimmedOtp = otp ? String(otp).trim() : "";
+
+    if (!trimmedEmail || !trimmedOtp || trimmedOtp.length !== 6) {
+      return res.status(400).json({
+        errors: { otp: "Please enter a valid 6-digit OTP code" },
+        message: "Please enter a valid 6-digit OTP code",
+      });
+    }
+
+    const user = await User.findOne({ email: trimmedEmail });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.otp || user.otp !== trimmedOtp) {
+      return res.status(400).json({
+        errors: { otp: "Invalid OTP verification code" },
+        message: "Invalid OTP verification code",
+      });
+    }
+
+    if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
+      return res.status(400).json({
+        errors: { otp: "OTP code has expired. Please request a new code." },
+        message: "OTP code has expired. Please request a new code.",
+      });
+    }
+
+    res.status(200).json({ message: "OTP code verified successfully" });
+  } catch (error) {
+    console.error("Verify Reset OTP Error:", error);
+    res.status(500).json({ message: error.message || "Server error during OTP verification" });
+  }
+};
+
 // ─── RESET PASSWORD (Verify OTP & Update Password) ───────────────────────────
 exports.resetPassword = async (req, res) => {
   try {
