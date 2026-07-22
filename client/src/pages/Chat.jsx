@@ -2,10 +2,27 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 import LoopChatLogo from "../components/LoopChatLogo";
+import CallModal from "../components/CallModal";
 
 const ENDPOINT = "http://localhost:5000";
 
 // ─── SVG Helper Icons ────────────────────────────────────────────────────────
+function PhoneCallIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
 function UsersIcon({ size = 16, color = "currentColor" }) {
   return (
     <svg
@@ -568,6 +585,26 @@ function Chat() {
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
 
+  // WebRTC Voice & Video Call State
+  const [callState, setCallState] = useState({
+    isCalling: false,
+    isIncoming: false,
+    isConnected: false,
+    callerName: "",
+    isVideoCall: false,
+    peerId: null,
+    offer: null,
+  });
+
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
+
+  const peerConnectionRef = useRef(null);
+  const callTimerRef = useRef(null);
+
   const messagesEndRef = useRef(null);
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -751,6 +788,58 @@ function Chat() {
       if (selectedChatRef.current?._id === room) setIsTyping(false);
     };
 
+    const handleIncomingCall = ({ offer, from, callerName, isVideoCall }) => {
+      setCallState({
+        isCalling: false,
+        isIncoming: true,
+        isConnected: false,
+        callerName,
+        isVideoCall,
+        peerId: from,
+        offer,
+      });
+    };
+
+    const handleCallAccepted = async ({ answer }) => {
+      if (peerConnectionRef.current) {
+        try {
+          await peerConnectionRef.current.setRemoteDescription(
+            new RTCSessionDescription(answer)
+          );
+          setCallState((prev) => ({
+            ...prev,
+            isCalling: false,
+            isConnected: true,
+          }));
+          setCallDuration(0);
+          callTimerRef.current = setInterval(() => {
+            setCallDuration((prev) => prev + 1);
+          }, 1000);
+        } catch (err) {
+          console.error("Error setting remote description:", err);
+        }
+      }
+    };
+
+    const handleIceCandidate = async ({ candidate }) => {
+      if (candidate && peerConnectionRef.current) {
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error("Error adding ice candidate:", err);
+        }
+      }
+    };
+
+    const handleCallRejected = () => {
+      alert("Call was declined.");
+      cleanupCall();
+    };
+
+    const handleCallEnded = () => {
+      cleanupCall();
+    };
+
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
     socket.on("message deleted", handleMessageDeleted);
@@ -758,6 +847,11 @@ function Chat() {
     socket.on("chat deleted", handleChatDeleted);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
+    socket.on("incoming call", handleIncomingCall);
+    socket.on("call accepted", handleCallAccepted);
+    socket.on("ice candidate", handleIceCandidate);
+    socket.on("call rejected", handleCallRejected);
+    socket.on("call ended", handleCallEnded);
 
     return () => {
       socket.off("receive message", handleReceivedMessage);
@@ -767,8 +861,205 @@ function Chat() {
       socket.off("chat deleted", handleChatDeleted);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
+      socket.off("incoming call", handleIncomingCall);
+      socket.off("call accepted", handleCallAccepted);
+      socket.off("ice candidate", handleIceCandidate);
+      socket.off("call rejected", handleCallRejected);
+      socket.off("call ended", handleCallEnded);
     };
-  }, [socket, markChatAsRead]);
+  }, [socket, markChatAsRead, cleanupCall]);
+
+  // WebRTC Cleanup Helper
+  function cleanupCall() {
+    if (localStream) {
+      localStream.getTracks().forEach((t) => t.stop());
+      setLocalStream(null);
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((t) => t.stop());
+      setRemoteStream(null);
+    }
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    clearInterval(callTimerRef.current);
+    setCallDuration(0);
+    setIsMicMuted(false);
+    setIsVideoOff(false);
+    setCallState({
+      isCalling: false,
+      isIncoming: false,
+      isConnected: false,
+      callerName: "",
+      isVideoCall: false,
+      peerId: null,
+      offer: null,
+    });
+  }
+
+  // Initiate Call
+  const initiateCall = async (isVideo) => {
+    if (!selectedChat || selectedChat.isGroupChat || !currentUser) return;
+    const recipient = getRecipient(selectedChat.users);
+    if (!recipient || !recipient._id) {
+      alert("Recipient is unavailable for call.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: isVideo,
+      });
+      setLocalStream(stream);
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
+      });
+
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          socket?.emit("ice candidate", { to: recipient._id, candidate: e.candidate });
+        }
+      };
+
+      pc.ontrack = (e) => {
+        if (e.streams && e.streams[0]) {
+          setRemoteStream(e.streams[0]);
+        }
+      };
+
+      peerConnectionRef.current = pc;
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      socket?.emit("call user", {
+        userToCall: recipient._id,
+        offer,
+        from: currentUser.user._id,
+        callerName: currentUser.user.name,
+        isVideoCall: isVideo,
+        chatId: selectedChat._id,
+      });
+
+      setCallState({
+        isCalling: true,
+        isIncoming: false,
+        isConnected: false,
+        callerName: recipient.name,
+        isVideoCall: isVideo,
+        peerId: recipient._id,
+        offer: null,
+      });
+    } catch (err) {
+      console.error("Camera/Microphone access error:", err);
+      alert("Camera and Microphone permissions are required to start a call.");
+      cleanupCall();
+    }
+  };
+
+  // Accept Incoming Call
+  const acceptCall = async () => {
+    if (!callState.isIncoming || !callState.peerId) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: callState.isVideoCall,
+      });
+      setLocalStream(stream);
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
+      });
+
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          socket?.emit("ice candidate", { to: callState.peerId, candidate: e.candidate });
+        }
+      };
+
+      pc.ontrack = (e) => {
+        if (e.streams && e.streams[0]) {
+          setRemoteStream(e.streams[0]);
+        }
+      };
+
+      peerConnectionRef.current = pc;
+
+      await pc.setRemoteDescription(new RTCSessionDescription(callState.offer));
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      socket?.emit("answer call", { to: callState.peerId, answer });
+
+      setCallState((prev) => ({
+        ...prev,
+        isIncoming: false,
+        isConnected: true,
+      }));
+
+      setCallDuration(0);
+      callTimerRef.current = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Accept call error:", err);
+      alert("Camera and Microphone permissions are required to accept call.");
+      rejectCall();
+    }
+  };
+
+  // Reject Incoming Call
+  const rejectCall = () => {
+    if (callState.peerId) {
+      socket?.emit("reject call", { to: callState.peerId });
+    }
+    cleanupCall();
+  };
+
+  // End Call
+  const endCall = () => {
+    if (callState.peerId) {
+      socket?.emit("end call", { to: callState.peerId });
+    }
+    cleanupCall();
+  };
+
+  // Toggle Mic Mute
+  const toggleMic = () => {
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsMicMuted(!audioTrack.enabled);
+      }
+    }
+  };
+
+  // Toggle Video Camera
+  const toggleVideo = () => {
+    if (localStream) {
+      const videoTrack = localStream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoOff(!videoTrack.enabled);
+      }
+    }
+  };
 
   // Voice Notes Recording Logic
   const startRecording = async () => {
@@ -1990,6 +2281,28 @@ function Chat() {
                 </div>
 
                 <div className="chat-header-actions">
+                  {!selectedChat.isGroupChat && (
+                    <>
+                      <button
+                        type="button"
+                        className="call-header-btn"
+                        onClick={() => initiateCall(false)}
+                        title="Start Voice Call"
+                      >
+                        <PhoneCallIcon size={18} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="call-header-btn"
+                        onClick={() => initiateCall(true)}
+                        title="Start Video Call"
+                      >
+                        <VideoIcon size={18} />
+                      </button>
+                    </>
+                  )}
+
                   {selectedChat.isGroupChat && (
                     <button
                       className="leave-group-btn"
@@ -2403,6 +2716,21 @@ function Chat() {
           )}
         </div>
       </div>
+
+      {/* WebRTC Voice & Video Call Overlay Modal */}
+      <CallModal
+        callState={callState}
+        localStream={localStream}
+        remoteStream={remoteStream}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+        isMicMuted={isMicMuted}
+        isVideoOff={isVideoOff}
+        onToggleMic={toggleMic}
+        onToggleVideo={toggleVideo}
+        callDuration={callDuration}
+      />
     </>
   );
 }

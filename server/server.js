@@ -129,6 +129,50 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ================= WEBRTC VOICE & VIDEO CALL SIGNALING =================
+  socket.on("call user", ({ userToCall, offer, from, callerName, isVideoCall, chatId }) => {
+    const recipientSocketId = onlineUsers[userToCall];
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit("incoming call", {
+        offer,
+        from,
+        callerName,
+        isVideoCall,
+        chatId,
+      });
+    } else {
+      socket.emit("call unavailable", { message: "User is currently offline." });
+    }
+  });
+
+  socket.on("answer call", ({ to, answer }) => {
+    const callerSocketId = onlineUsers[to];
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("call accepted", { answer });
+    }
+  });
+
+  socket.on("ice candidate", ({ to, candidate }) => {
+    const targetSocketId = onlineUsers[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("ice candidate", { candidate });
+    }
+  });
+
+  socket.on("reject call", ({ to }) => {
+    const callerSocketId = onlineUsers[to];
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("call rejected");
+    }
+  });
+
+  socket.on("end call", ({ to }) => {
+    const peerSocketId = onlineUsers[to];
+    if (peerSocketId) {
+      io.to(peerSocketId).emit("call ended");
+    }
+  });
+
   socket.on("disconnect", () => {
     let disconnectedUserId = null;
     for (const [userId, socketId] of Object.entries(onlineUsers)) {
