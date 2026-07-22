@@ -10,6 +10,13 @@ const messageSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    file: {
+      url: { type: String, default: null },
+      fileName: { type: String, default: null },
+      fileType: { type: String, default: null }, // 'image', 'video', 'audio', 'document'
+      fileSize: { type: Number, default: 0 },
+      mimeType: { type: String, default: null },
+    },
     chat: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",

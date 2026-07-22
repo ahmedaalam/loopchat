@@ -8,6 +8,8 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 
+const path = require("path");
+
 const connectDB = require("./config/db");
 
 // routes
@@ -15,6 +17,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
 
@@ -24,6 +27,9 @@ connectDB();
 // middlewares
 app.use(cors());
 app.use(express.json());
+
+// Serve static uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // test route
 app.get("/", (req, res) => {
@@ -35,6 +41,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // ================= SOCKET.IO SETUP =================
 

@@ -2,15 +2,16 @@ const Message = require("../models/Message");
 const Chat = require("../models/Chat");
 
 exports.sendMessage = async (req, res) => {
-  const { content, chatId } = req.body;
+  const { content, chatId, file } = req.body;
 
-  if (!content || !chatId) {
-    return res.status(400).send("Invalid data");
+  if ((!content && !file) || !chatId) {
+    return res.status(400).json({ message: "Invalid data: content or file attachment required" });
   }
 
   let message = await Message.create({
     sender: req.user,
-    content,
+    content: content || "",
+    file: file || null,
     chat: chatId,
     readBy: [req.user],
   });

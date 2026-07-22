@@ -5,12 +5,21 @@ import LoopChatLogo from "../components/LoopChatLogo";
 
 const ENDPOINT = "http://localhost:5000";
 
+// ─── Format Bytes Helper ──────────────────────────────────────────────────────
+function formatBytes(bytes, decimals = 1) {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+}
+
 // ─── Web Audio notification beep (no audio file needed) ───────────────────────
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Main tone
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
@@ -23,7 +32,6 @@ function playNotificationSound() {
     osc1.start(ctx.currentTime);
     osc1.stop(ctx.currentTime + 0.4);
 
-    // Subtle harmony
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
@@ -45,26 +53,20 @@ function showBrowserNotification(senderName, messageContent, chatName) {
   if (Notification.permission !== "granted") return;
   const title = chatName ? `${chatName} • ${senderName}` : senderName;
   const notification = new Notification(title, {
-    body: messageContent,
+    body: messageContent || "Sent an attachment",
     icon: "/favicon.svg",
     badge: "/favicon.svg",
-    tag: "loopchat-msg",      // replaces any existing notification (no spam)
+    tag: "loopchat-msg",
     renotify: true,
   });
-  // Auto-close after 5 s
   setTimeout(() => notification.close(), 5000);
 }
 
 // ─── Reusable tick icon ───────────────────────────────────────────────────────
-// tickState: 'sent' | 'delivered' | 'read'
 function TickIcon({ tickState, size = 9 }) {
-  // Colors chosen to harmonize with the blue bubble (#2563eb):
-  //  sent      → single faint-white tick  (barely there, just confirms sent)
-  //  delivered → double brighter-white    (clearly visible double tick)
-  //  read      → double soft-cyan         (same color family as blue, clearly distinct)
   const SENT      = "rgba(255,255,255,0.38)";
   const DELIVERED = "rgba(255,255,255,0.82)";
-  const READ      = "#67e8f9"; // cyan-300 — harmonious with blue, clearly stands out
+  const READ      = "#67e8f9";
 
   const isDouble = tickState !== "sent";
   const color    = tickState === "read" ? READ : tickState === "delivered" ? DELIVERED : SENT;
@@ -73,21 +75,101 @@ function TickIcon({ tickState, size = 9 }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", flexShrink: 0, marginLeft: 2 }}>
       {isDouble ? (
-        <svg viewBox="0 0 22 11" fill="none" width={size * 2} height={size}
-             style={{ overflow: "visible" }}>
-          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw}
-                strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M7 5.5L11.5 10L21 1" stroke={color} strokeWidth={sw}
-                strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 22 11" fill="none" width={size * 2} height={size} style={{ overflow: "visible" }}>
+          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M7 5.5L11.5 10L21 1" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ) : (
-        <svg viewBox="0 0 16 11" fill="none" width={size * 1.3} height={size}
-             style={{ overflow: "visible" }}>
-          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw}
-                strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 16 11" fill="none" width={size * 1.3} height={size} style={{ overflow: "visible" }}>
+          <path d="M1 5.5L5.5 10L15 1" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
     </span>
+  );
+}
+
+// ─── Render File Attachment inside Chat Bubble ──────────────────────────────
+function AttachmentView({ file, isSentByMe, onOpenLightbox, timeText, tickState, showTimeOverlay, isGroupChat }) {
+  if (!file || !file.url) return null;
+  const fullUrl = `http://localhost:5000${file.url}`;
+
+  if (file.fileType === "image") {
+    return (
+      <div className="chat-media-image-wrapper" onClick={() => onOpenLightbox(file)}>
+        <img src={fullUrl} alt={file.fileName || "Image"} className="chat-media-image" />
+        <div className="chat-media-hover-overlay">
+          <span>🔍 View Full</span>
+        </div>
+        {showTimeOverlay && (
+          <div className="media-time-badge">
+            <span>{timeText}</span>
+            {isSentByMe && !isGroupChat && <TickIcon tickState={tickState} size={9} />}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (file.fileType === "video") {
+    return (
+      <div className="chat-media-video-wrapper">
+        <video src={fullUrl} controls className="chat-media-video" />
+        {showTimeOverlay && (
+          <div className="media-time-badge">
+            <span>{timeText}</span>
+            {isSentByMe && !isGroupChat && <TickIcon tickState={tickState} size={9} />}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (file.fileType === "audio") {
+    return (
+      <div className="chat-media-audio-wrapper">
+        <audio src={fullUrl} controls className="chat-media-audio" />
+        {showTimeOverlay && (
+          <div className="media-time-badge inline-badge">
+            <span>{timeText}</span>
+            {isSentByMe && !isGroupChat && <TickIcon tickState={tickState} size={9} />}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback / Document Card (PDF, ZIP, DOCX)
+  return (
+    <div className={`chat-doc-card ${isSentByMe ? "sent-doc" : "received-doc"}`}>
+      <div className="doc-icon-container">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      </div>
+      <div className="doc-details">
+        <div className="doc-name" title={file.fileName}>{file.fileName}</div>
+        <div className="doc-meta-row">
+          <span className="doc-size">{formatBytes(file.fileSize)}</span>
+          {showTimeOverlay && (
+            <span className="doc-time-inline">
+              • {timeText}
+              {isSentByMe && !isGroupChat && <TickIcon tickState={tickState} size={8} />}
+            </span>
+          )}
+        </div>
+      </div>
+      <a href={fullUrl} download={file.fileName} target="_blank" rel="noopener noreferrer" className="doc-download-btn" title="Download file">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      </a>
+    </div>
   );
 }
 
@@ -97,6 +179,14 @@ function Chat() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+
+  // Attachment & Media state
+  const [pendingFile, setPendingFile] = useState(null); // { file, previewUrl, fileType }
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [mediaLightbox, setMediaLightbox] = useState(null); // { url, fileType, fileName }
+  const fileInputRef = useRef(null);
 
   // Sidebar search
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,7 +235,7 @@ function Chat() {
     }
   }, [selectedChat, markChatAsRead]);
 
-  // 1. Auth setup, load chats, and request notification permission
+  // 1. Auth setup & load chats
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (!storedUser) {
@@ -155,7 +245,6 @@ function Chat() {
       fetchChats(storedUser.token);
     }
 
-    // Ask for browser notification permission once on load
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -190,7 +279,7 @@ function Chat() {
         });
       }
 
-      // Always update sidebar latest message & order
+      // Update sidebar latest message & order
       setChats((prev) => {
         const updated = prev.map((c) =>
           c._id === receivedMsg.chat ? { ...c, latestMessage: receivedMsg } : c
@@ -198,14 +287,8 @@ function Chat() {
         return updated.sort((a, b) => (a._id === receivedMsg.chat ? -1 : b._id === receivedMsg.chat ? 1 : 0));
       });
 
-      // 🔔 Trigger notification + sound when:
-      //    - tab is not focused, OR
-      //    - message is from a different chat
       if (!isTabVisible || !isActiveChat) {
-        // Play sound
         playNotificationSound();
-
-        // Show OS notification
         const sender = receivedMsg.sender;
         const senderName = typeof sender === "object" ? sender.name : "Someone";
         const chatName = activeChat?.isGroupChat ? activeChat.chatName : null;
@@ -226,7 +309,6 @@ function Chat() {
         );
       }
 
-      // Update sidebar tick
       setChats((prev) =>
         prev.map((c) => {
           if (c._id === chatId && c.latestMessage) {
@@ -270,7 +352,7 @@ function Chat() {
   // 4. Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, pendingFile, uploading]);
 
   // 5. Fetch chats
   const fetchChats = async (token) => {
@@ -336,6 +418,59 @@ function Chat() {
     return () => clearTimeout(t);
   }, [groupSearch, currentUser]);
 
+  // ─── Drag and Drop Handlers ──────────────────────────────────────────────
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // ─── Process Selected File ────────────────────────────────────────────────
+  const processSelectedFile = (file) => {
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File size exceeds maximum limit of 25MB.");
+      return;
+    }
+
+    let fileType = "document";
+    if (file.type.startsWith("image/")) fileType = "image";
+    else if (file.type.startsWith("video/")) fileType = "video";
+    else if (file.type.startsWith("audio/")) fileType = "audio";
+
+    const previewUrl = fileType === "image" ? URL.createObjectURL(file) : null;
+    setPendingFile({ file, previewUrl, fileType });
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      processSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const clearPendingFile = () => {
+    if (pendingFile?.previewUrl) {
+      URL.revokeObjectURL(pendingFile.previewUrl);
+    }
+    setPendingFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   // 9. Open 1-to-1 chat
   const handleSelectUser = async (userId) => {
     if (!currentUser) return;
@@ -378,19 +513,50 @@ function Chat() {
     }, 2000);
   };
 
-  // 12. Send message
+  // 12. Send message (with optional file attachment)
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat || !currentUser) return;
+    if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser || uploading) return;
+
     try {
-      const content = newMessage;
+      setUploading(true);
+      setUploadProgress(0);
+
+      let uploadedFilePayload = null;
+
+      // Upload file first if attached
+      if (pendingFile) {
+        const formData = new FormData();
+        formData.append("file", pendingFile.file);
+
+        const uploadRes = await axios.post("http://localhost:5000/api/upload", formData, {
+          headers: {
+            Authorization: `Bearer ${currentUser.token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          },
+        });
+
+        uploadedFilePayload = uploadRes.data;
+      }
+
+      const content = newMessage.trim();
       setNewMessage("");
+      clearPendingFile();
+
       socket?.emit("stop typing", selectedChat._id);
       setLocalTyping(false);
 
       const { data } = await axios.post(
         "http://localhost:5000/api/message",
-        { content, chatId: selectedChat._id },
+        {
+          content,
+          chatId: selectedChat._id,
+          file: uploadedFilePayload,
+        },
         { headers: { Authorization: `Bearer ${currentUser.token}` } }
       );
 
@@ -401,9 +567,14 @@ function Chat() {
         );
         return updated.sort((a, b) => (a._id === selectedChat._id ? -1 : b._id === selectedChat._id ? 1 : 0));
       });
+
       socket?.emit("send message", data);
     } catch (err) {
       console.error("Error sending message:", err);
+      alert("Failed to send message/file. Please try again.");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -423,7 +594,6 @@ function Chat() {
       setChats((prev) => [data, ...prev]);
       setSelectedChat(data);
       fetchMessages(data._id);
-      // Reset modal
       setShowGroupModal(false);
       setGroupName("");
       setGroupSearch("");
@@ -495,7 +665,6 @@ function Chat() {
   const formatTime = (dateStr) =>
     new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  // ─── WhatsApp-style date label ───────────────────────────────────────────────
   const getDateLabel = (dateStr) => {
     const msgDate = new Date(dateStr);
     const today   = new Date();
@@ -512,7 +681,7 @@ function Chat() {
 
     const daysAgo = Math.floor((today - msgDate) / 86_400_000);
     if (daysAgo < 7) {
-      return msgDate.toLocaleDateString([], { weekday: "long" }); // e.g. "Monday"
+      return msgDate.toLocaleDateString([], { weekday: "long" });
     }
     return msgDate.toLocaleDateString([], { day: "numeric", month: "long", year: "numeric" });
   };
@@ -526,8 +695,37 @@ function Chat() {
     );
   };
 
+  // Helper for rendering latest message in sidebar
+  const getSidebarMessageText = (msg) => {
+    if (!msg) return "No messages yet";
+    if (msg.content) return msg.content;
+    if (msg.file) {
+      if (msg.file.fileType === "image") return "📷 Photo";
+      if (msg.file.fileType === "video") return "🎥 Video";
+      if (msg.file.fileType === "audio") return "🎵 Audio note";
+      return `📄 ${msg.file.fileName || "Attachment"}`;
+    }
+    return "Attachment";
+  };
+
   return (
     <>
+      {/* Media Lightbox Modal */}
+      {mediaLightbox && (
+        <div className="lightbox-overlay" onClick={() => setMediaLightbox(null)}>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <button className="lightbox-close-btn" onClick={() => setMediaLightbox(null)}>✕</button>
+            <img src={mediaLightbox.url} alt={mediaLightbox.fileName} className="lightbox-image" />
+            <div className="lightbox-footer">
+              <span className="lightbox-filename">{mediaLightbox.fileName}</span>
+              <a href={mediaLightbox.url} download={mediaLightbox.fileName} target="_blank" rel="noopener noreferrer" className="lightbox-download-link">
+                📥 Download
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Group Modal */}
       {showGroupModal && (
         <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowGroupModal(false); }}>
@@ -541,7 +739,6 @@ function Chat() {
               onChange={(e) => setGroupName(e.target.value)}
             />
 
-            {/* Member chips */}
             {selectedGroupMembers.length > 0 && (
               <div className="chips-container">
                 {selectedGroupMembers.map((u) => (
@@ -686,7 +883,7 @@ function Chat() {
                             <span className="item-msg">
                               {chatNotifications.length > 0 ? (
                                 <span style={{ color: "var(--accent)", fontWeight: "500" }}>
-                                  {chatNotifications[chatNotifications.length - 1].content}
+                                  {getSidebarMessageText(chatNotifications[chatNotifications.length - 1])}
                                 </span>
                               ) : chat.latestMessage ? (
                                 (() => {
@@ -705,7 +902,7 @@ function Chat() {
                                       {isMe && !chat.isGroupChat && (
                                         <TickIcon tickState={sidebarTickState} size={8} />
                                       )}
-                                      <span>{isMe ? "You" : senderName}: {chat.latestMessage.content}</span>
+                                      <span>{isMe ? "You" : senderName}: {getSidebarMessageText(chat.latestMessage)}</span>
                                     </span>
                                   );
                                 })()
@@ -748,7 +945,27 @@ function Chat() {
         </div>
 
         {/* ===== CHAT WINDOW ===== */}
-        <div className="chat-window">
+        <div
+          className={`chat-window ${isDragging ? "dragging-over" : ""}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* Drag & Drop Visual Overlay */}
+          {isDragging && (
+            <div className="drag-drop-overlay">
+              <div className="drag-drop-card">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <h3>Drop file to send</h3>
+                <p>Images, videos, audio, or documents up to 25MB</p>
+              </div>
+            </div>
+          )}
+
           {selectedChat ? (
             <>
               {/* Header */}
@@ -791,7 +1008,6 @@ function Chat() {
                   </div>
                 </div>
 
-                {/* Leave group button (only shown for groups) */}
                 {selectedChat.isGroupChat && (
                   <button className="leave-group-btn" onClick={handleLeaveGroup}>
                     Leave Group
@@ -806,7 +1022,6 @@ function Chat() {
                   const senderName = typeof msg.sender === "object" ? msg.sender.name : "User";
                   const isSentByMe = senderId === currentUser.user._id;
 
-                  // ─── Tick logic (only for sent messages, 1-to-1 chats) ─────
                   const readBy = msg.readBy || [];
                   const isRead = readBy.some(
                     (id) => (typeof id === "object" ? id._id : id) !== currentUser.user._id
@@ -816,40 +1031,60 @@ function Chat() {
                     : null;
                   const isDelivered = recipient && onlineUsers.includes(recipient._id);
 
-                  let tickState = "sent";      // single gray ✓
-                  if (isRead) tickState = "read";           // double blue ✓✓
-                  else if (isDelivered) tickState = "delivered"; // double gray ✓✓
+                  let tickState = "sent";
+                  if (isRead) tickState = "read";
+                  else if (isDelivered) tickState = "delivered";
 
-                  // ─── Date separator ─────────────────────────────────────────
                   const showDateSep =
                     idx === 0 || !isSameDay(messages[idx - 1].createdAt, msg.createdAt);
 
+                  const hasMedia = Boolean(msg.file);
+                  const isMediaOnly = hasMedia && (!msg.content || !msg.content.trim());
+
                   return (
-                    <>
+                    <div key={msg._id || idx}>
                       {showDateSep && (
-                        <div key={`date-${msg._id}`} className="date-separator">
+                        <div className="date-separator">
                           <span className="date-separator-label">{getDateLabel(msg.createdAt)}</span>
                         </div>
                       )}
-                      <div key={msg._id} className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
-                        <div className="message-bubble">
-                          {/* Sender name in group chats */}
+                      <div className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
+                        <div className={`message-bubble ${hasMedia ? "has-media" : ""} ${isMediaOnly ? "media-only-bubble" : ""}`}>
                           {selectedChat.isGroupChat && !isSentByMe && (
                             <div style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: 600, marginBottom: "0.25rem" }}>
                               {senderName}
                             </div>
                           )}
-                          <div>{msg.content}</div>
-                          <div className="message-info">
-                            <span>{formatTime(msg.createdAt)}</span>
-                            {/* WhatsApp-style ticks — sent messages in 1-to-1 chats only */}
-                            {isSentByMe && !selectedChat.isGroupChat && (
-                              <TickIcon tickState={tickState} size={9} />
-                            )}
-                          </div>
+
+                          {/* Render File Attachment if present */}
+                          {msg.file && (
+                            <AttachmentView
+                              file={msg.file}
+                              isSentByMe={isSentByMe}
+                              onOpenLightbox={(f) => setMediaLightbox({ url: `http://localhost:5000${f.url}`, fileType: f.fileType, fileName: f.fileName })}
+                              timeText={formatTime(msg.createdAt)}
+                              tickState={tickState}
+                              showTimeOverlay={isMediaOnly}
+                              isGroupChat={selectedChat.isGroupChat}
+                            />
+                          )}
+
+                          {/* Render Text Content if present */}
+                          {msg.content && (
+                            <div className="message-text-content">{msg.content}</div>
+                          )}
+
+                          {!isMediaOnly && (
+                            <div className="message-info">
+                              <span>{formatTime(msg.createdAt)}</span>
+                              {isSentByMe && !selectedChat.isGroupChat && (
+                                <TickIcon tickState={tickState} size={9} />
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </>
+                    </div>
                   );
                 })}
 
@@ -867,17 +1102,76 @@ function Chat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input pane */}
+              {/* Input pane with File Attachment Drawer */}
               <div className="input-pane">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                />
+
+                {/* Pending File Attachment Bar */}
+                {pendingFile && (
+                  <div className="pending-file-bar">
+                    <div className="pending-file-info">
+                      {pendingFile.fileType === "image" ? (
+                        <img src={pendingFile.previewUrl} alt="Preview" className="pending-thumb" />
+                      ) : (
+                        <div className="pending-doc-icon">
+                          {pendingFile.fileType === "video" ? "🎥" : pendingFile.fileType === "audio" ? "🎵" : "📄"}
+                        </div>
+                      )}
+                      <div className="pending-details">
+                        <span className="pending-name">{pendingFile.file.name}</span>
+                        <span className="pending-size">{formatBytes(pendingFile.file.size)}</span>
+                      </div>
+                    </div>
+                    <button type="button" className="pending-remove-btn" onClick={clearPendingFile} title="Remove attachment">
+                      ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* Upload Progress Bar */}
+                {uploading && (
+                  <div className="upload-progress-bar-container">
+                    <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }} />
+                    <span className="upload-progress-text">Uploading... {uploadProgress}%</span>
+                  </div>
+                )}
+
                 <form onSubmit={handleSendMessage} className="input-form">
+                  <button
+                    type="button"
+                    className="attach-button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Attach file or media"
+                    disabled={uploading}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </button>
+
                   <input
                     type="text"
                     className="chat-input"
-                    placeholder={selectedChat.isGroupChat ? `Message ${selectedChat.chatName}...` : "Type a message..."}
+                    placeholder={
+                      pendingFile
+                        ? "Add a caption (optional)..."
+                        : selectedChat.isGroupChat
+                        ? `Message ${selectedChat.chatName}...`
+                        : "Type a message..."
+                    }
                     value={newMessage}
                     onChange={handleInputChange}
+                    disabled={uploading}
                   />
-                  <button type="submit" className="send-button">
+
+                  <button type="submit" className="send-button" disabled={uploading || (!newMessage.trim() && !pendingFile)}>
                     <svg viewBox="0 0 24 24">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>

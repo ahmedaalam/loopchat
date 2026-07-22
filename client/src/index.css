@@ -1159,3 +1159,486 @@ body {
   .messages-pane { padding: 1rem; }
   .message-bubble { max-width: 78%; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   FILE & MEDIA UPLOAD STYLES
+═══════════════════════════════════════════════════════ */
+.attach-button {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.attach-button:hover:not(:disabled) {
+  color: var(--accent-text);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.attach-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Pending File Drawer */
+.pending-file-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.6rem;
+  animation: fadeUp 0.2s var(--ease);
+}
+
+.pending-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.pending-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.pending-doc-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid var(--border);
+}
+
+.pending-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pending-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-size {
+  font-size: 0.73rem;
+  color: var(--text-3);
+}
+
+.pending-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.pending-remove-btn:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Upload Progress Bar */
+.upload-progress-bar-container {
+  width: 100%;
+  height: 22px;
+  background: var(--surface-4);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 0.6rem;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  transition: width 0.15s ease;
+}
+
+.upload-progress-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+/* Drag & Drop Visual Overlay */
+.chat-window.dragging-over {
+  position: relative;
+}
+
+.drag-drop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 10, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.drag-drop-card {
+  border: 2px dashed var(--accent-text);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--accent-dim);
+}
+
+.drag-drop-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.drag-drop-card p {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MEDIA ATTACHMENTS IN CHAT BUBBLES (STRICT BORDERLESS & CONTAINERLESS)
+═══════════════════════════════════════════════════════ */
+.message-bubble.has-media {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Removes blue/dark bubble container background & padding when message contains media only */
+.message-bubble.media-only-bubble {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.chat-media-image-wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 0;
+  max-width: 320px;
+  border: none !important;
+  outline: none !important;
+}
+
+.chat-media-image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s var(--ease);
+  border: none !important;
+  outline: none !important;
+}
+
+.chat-media-image-wrapper:hover .chat-media-image {
+  transform: scale(1.03);
+}
+
+.chat-media-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border: none !important;
+}
+
+.chat-media-hover-overlay span {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  border: none !important;
+}
+
+.chat-media-image-wrapper:hover .chat-media-hover-overlay {
+  opacity: 1;
+}
+
+/* Floating timestamp badge over image/video */
+.media-time-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  color: #f5f5f5;
+  font-size: 0.66rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.media-time-badge.inline-badge {
+  position: static;
+  margin-top: 4px;
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Video & Audio */
+.chat-media-video-wrapper {
+  position: relative;
+  max-width: 340px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 0;
+  border: none !important;
+  outline: none !important;
+}
+
+.chat-media-video {
+  width: 100%;
+  max-height: 240px;
+  display: block;
+  background: #000;
+  border: none !important;
+  outline: none !important;
+}
+
+.chat-media-audio-wrapper {
+  margin-bottom: 0;
+  min-width: 240px;
+  border: none !important;
+}
+
+.chat-media-audio {
+  width: 100%;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: none !important;
+  outline: none !important;
+}
+
+/* Document Download Card */
+.chat-doc-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 0;
+  max-width: 320px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sent-doc {
+  background: var(--surface-3) !important;
+  border: none !important;
+}
+
+.received-doc {
+  background: var(--surface-3) !important;
+  border: none !important;
+}
+
+.doc-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 2px;
+}
+
+.doc-time-inline {
+  font-size: 0.7rem;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.doc-icon-container {
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.doc-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.doc-name {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-size {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.doc-download-btn {
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.doc-download-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIGHTBOX MODAL
+═══════════════════════════════════════════════════════ */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(12px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -45px;
+  right: -10px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.lightbox-close-btn:hover {
+  background: var(--danger);
+}
+
+.lightbox-footer {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--surface-3);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.lightbox-filename {
+  font-size: 0.85rem;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.lightbox-download-link {
+  color: var(--accent-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.lightbox-download-link:hover {
+  text-decoration: underline;
+}
+
