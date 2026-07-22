@@ -231,6 +231,26 @@ function MoreVerticalIcon({ size = 18, color = "currentColor" }) {
   );
 }
 
+function MicIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -523,6 +543,13 @@ function Chat() {
   const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
   const [groupCreating, setGroupCreating] = useState(false);
 
+  // Voice Notes Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+
   const messagesEndRef = useRef(null);
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -724,6 +751,102 @@ function Chat() {
       socket.off("stop typing", handleStopTyping);
     };
   }, [socket, markChatAsRead]);
+
+  // Voice Notes Recording Logic
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      alert("Microphone permission is required to record voice notes.");
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current.stop();
+    }
+    clearInterval(recordingTimerRef.current);
+    setIsRecording(false);
+    setRecordingTime(0);
+    audioChunksRef.current = [];
+  };
+
+  const stopAndSendRecording = () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+
+    mediaRecorderRef.current.onstop = async () => {
+      clearInterval(recordingTimerRef.current);
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const audioFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, {
+        type: "audio/webm",
+      });
+
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      setIsRecording(false);
+      setRecordingTime(0);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", audioFile);
+
+        const uploadRes = await axios.post("http://localhost:5000/api/upload", formData, {
+          headers: {
+            Authorization: `Bearer ${currentUser.token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        const { data } = await axios.post(
+          "http://localhost:5000/api/message",
+          {
+            content: "",
+            chatId: selectedChat._id,
+            file: uploadRes.data,
+          },
+          { headers: { Authorization: `Bearer ${currentUser.token}` } },
+        );
+
+        setMessages((prev) => [...prev, data]);
+        setChats((prev) => {
+          const updated = prev.map((c) =>
+            c._id === selectedChat._id ? { ...c, latestMessage: data } : c,
+          );
+          return updated.sort((a, b) => (a._id === selectedChat._id ? -1 : b._id === selectedChat._id ? 1 : 0));
+        });
+
+        socket?.emit("send message", data);
+      } catch (err) {
+        console.error("Error sending voice note:", err);
+      }
+    };
+
+    mediaRecorderRef.current.stop();
+  };
+
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Auto scroll
   useEffect(() => {
@@ -2155,6 +2278,7 @@ function Chat() {
                     className="attach-button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Attach file or media"
+                    disabled={isRecording}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -2168,40 +2292,79 @@ function Chat() {
                     </svg>
                   </button>
 
-                  <input
-                    type="text"
-                    className="chat-input"
-                    placeholder={
-                      pendingFile
-                        ? "Add a caption (optional)..."
-                        : selectedChat.isGroupChat
-                          ? `Message ${selectedChat.chatName}...`
-                          : "Type a message..."
-                    }
-                    value={newMessage}
-                    onChange={handleInputChange}
-                  />
+                  {isRecording ? (
+                    <div className="recording-bar">
+                      <div className="recording-dot" />
+                      <span className="recording-timer">{formatTimer(recordingTime)}</span>
+                      <span style={{ fontSize: "0.82rem", color: "var(--text-2)", marginLeft: "auto" }}>
+                        Recording audio note...
+                      </span>
+                      <button
+                        type="button"
+                        className="recording-cancel-btn"
+                        onClick={cancelRecording}
+                        title="Cancel recording"
+                      >
+                        <CrossIcon size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="recording-send-btn"
+                        onClick={stopAndSendRecording}
+                        title="Send voice note"
+                      >
+                        <SendIcon size={16} color="#ffffff" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        className="chat-input"
+                        placeholder={
+                          pendingFile
+                            ? "Add a caption (optional)..."
+                            : selectedChat.isGroupChat
+                              ? `Message ${selectedChat.chatName}...`
+                              : "Type a message..."
+                        }
+                        value={newMessage}
+                        onChange={handleInputChange}
+                      />
 
-                  <button
-                    type="submit"
-                    className="send-button"
-                    disabled={!newMessage.trim() && !pendingFile}
-                    title="Send message"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                  </button>
+                      {!newMessage.trim() && !pendingFile ? (
+                        <button
+                          type="button"
+                          className="mic-button"
+                          onClick={startRecording}
+                          title="Record voice note"
+                        >
+                          <MicIcon size={20} color="var(--accent-text)" />
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          className="send-button"
+                          disabled={!newMessage.trim() && !pendingFile}
+                          title="Send message"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#ffffff"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
+                  )}
                 </form>
               </div>
             </>

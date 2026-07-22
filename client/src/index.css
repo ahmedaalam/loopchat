@@ -1841,6 +1841,153 @@ body {
   font-weight: 500;
 }
 
+/* ═══════════════════════════════════════════════════════
+   VOICE NOTES RECORDING & MESSAGE REACTIONS
+═══════════════════════════════════════════════════════ */
+.mic-button {
+  background: transparent;
+  border: none;
+  color: var(--accent-text);
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  margin-left: 0.25rem;
+}
+
+.mic-button:hover {
+  background: var(--accent-dim);
+  transform: scale(1.08);
+}
+
+.recording-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  animation: fadeIn 0.2s ease;
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--danger);
+  border-radius: 50%;
+  animation: pulseDot 1s infinite alternate;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px var(--danger); }
+}
+
+.recording-timer {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f87171;
+  font-family: monospace;
+}
+
+.recording-cancel-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.3rem;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.recording-cancel-btn:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.recording-send-btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.recording-send-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+/* Reactions Toolbar in Message Context Menu */
+.reaction-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
+}
+
+.reaction-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Reaction Pills on Message Bubble */
+.message-reactions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.reaction-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.reaction-pill.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+
 .lightbox-download-link {
   color: var(--accent-text);
   text-decoration: none;

@@ -108,6 +108,13 @@ io.on("connection", (socket) => {
     }
   });
 
+  // message reaction broadcast
+  socket.on("message reaction", ({ messageId, reactions, chatId }) => {
+    if (chatId) {
+      socket.to(chatId).emit("message reaction updated", { messageId, reactions, chatId });
+    }
+  });
+
   // clear chat broadcast
   socket.on("clear chat", ({ chatId }) => {
     if (chatId) {

@@ -104,3 +104,47 @@ exports.deleteMessage = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+// TOGGLE reaction on a message
+exports.toggleReaction = async (req, res) => {
+  const { messageId } = req.params;
+  const { emoji } = req.body;
+
+  if (!emoji) {
+    return res.status(400).json({ message: "Emoji reaction is required" });
+  }
+
+  try {
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const userId = typeof req.user === "object" ? (req.user._id || req.user.id) : req.user;
+
+    const existingIndex = message.reactions.findIndex(
+      (r) => r.user.toString() === userId.toString()
+    );
+
+    if (existingIndex > -1) {
+      if (message.reactions[existingIndex].emoji === emoji) {
+        // Remove reaction if same emoji is clicked
+        message.reactions.splice(existingIndex, 1);
+      } else {
+        // Change reaction emoji
+        message.reactions[existingIndex].emoji = emoji;
+      }
+    } else {
+      // Add new reaction
+      message.reactions.push({ user: userId, emoji });
+    }
+
+    await message.save();
+    const updatedMessage = await Message.findById(messageId).populate("sender", "name email");
+
+    return res.status(200).json(updatedMessage);
+  } catch (error) {
+    console.error("Toggle Reaction Error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
