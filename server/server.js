@@ -101,6 +101,13 @@ io.on("connection", (socket) => {
     }
   });
 
+  // delete message broadcast
+  socket.on("delete message", ({ messageId, chatId }) => {
+    if (chatId) {
+      socket.to(chatId).emit("message deleted", { messageId, chatId });
+    }
+  });
+
   socket.on("disconnect", () => {
     let disconnectedUserId = null;
     for (const [userId, socketId] of Object.entries(onlineUsers)) {

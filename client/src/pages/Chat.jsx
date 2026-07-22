@@ -93,6 +93,34 @@ function DownloadIcon({ size = 16, color = "currentColor" }) {
   );
 }
 
+function TrashIcon({ size = 13, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function ForwardIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 14 20 9 15 4" />
+      <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -268,6 +296,12 @@ function Chat() {
   const [mediaLightbox, setMediaLightbox] = useState(null);
   const fileInputRef = useRef(null);
 
+  // WhatsApp-style Action Context Menu State
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+  const [forwardingMsg, setForwardingMsg] = useState(null);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardSearch, setForwardSearch] = useState("");
+
   // Sidebar search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -290,6 +324,13 @@ function Chat() {
   const messagesEndRef = useRef(null);
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Close context menu on window click
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenuMsgId(null);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // Mark messages in chat as read
   const markChatAsRead = useCallback(async (chatId) => {
@@ -407,6 +448,22 @@ function Chat() {
       );
     };
 
+    const handleMessageDeleted = ({ messageId, chatId }) => {
+      const activeChat = selectedChatRef.current;
+      if (activeChat && activeChat._id === chatId) {
+        setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      }
+
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c._id === chatId && c.latestMessage?._id === messageId) {
+            return { ...c, latestMessage: null };
+          }
+          return c;
+        })
+      );
+    };
+
     const handleTyping = (room) => {
       if (selectedChatRef.current?._id === room) setIsTyping(true);
     };
@@ -416,12 +473,14 @@ function Chat() {
 
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
+    socket.on("message deleted", handleMessageDeleted);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
 
     return () => {
       socket.off("receive message", handleReceivedMessage);
       socket.off("messages read", handleMessagesRead);
+      socket.off("message deleted", handleMessageDeleted);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
     };
@@ -655,6 +714,74 @@ function Chat() {
     }
   };
 
+  // Delete message / media
+  const handleDeleteMessage = async (messageId) => {
+    if (!currentUser || !selectedChat) return;
+    if (!window.confirm("Delete this message/attachment for everyone?")) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/api/message/${messageId}`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+
+      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+
+      socket?.emit("delete message", { messageId, chatId: selectedChat._id });
+
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c._id === selectedChat._id && c.latestMessage?._id === messageId) {
+            const remaining = messages.filter((m) => m._id !== messageId);
+            return {
+              ...c,
+              latestMessage: remaining.length > 0 ? remaining[remaining.length - 1] : null,
+            };
+          }
+          return c;
+        })
+      );
+    } catch (err) {
+      console.error("Error deleting message:", err);
+      alert("Failed to delete message.");
+    }
+  };
+
+  // Forward message to another chat
+  const handleForwardMessage = async (targetChat) => {
+    if (!forwardingMsg || !currentUser) return;
+    try {
+      const { data } = await axios.post(
+        "http://localhost:5000/api/message",
+        {
+          content: forwardingMsg.content || "",
+          chatId: targetChat._id,
+          file: forwardingMsg.file || null,
+        },
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+
+      if (selectedChat?._id === targetChat._id) {
+        setMessages((prev) => [...prev, data]);
+      }
+
+      setChats((prev) => {
+        const updated = prev.map((c) =>
+          c._id === targetChat._id ? { ...c, latestMessage: data } : c
+        );
+        return updated.sort((a, b) => (a._id === targetChat._id ? -1 : b._id === targetChat._id ? 1 : 0));
+      });
+
+      socket?.emit("send message", data);
+
+      setShowForwardModal(false);
+      setForwardingMsg(null);
+      setForwardSearch("");
+    } catch (err) {
+      console.error("Error forwarding message:", err);
+      alert("Failed to forward message.");
+    }
+  };
+
   // Create group chat
   const handleCreateGroup = async () => {
     if (!groupName.trim() || selectedGroupMembers.length < 2) return;
@@ -771,14 +898,14 @@ function Chat() {
     );
   };
 
-function CameraIcon({ size = 16, color = "currentColor" }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" style={{ flexShrink: 0 }}>
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-      <circle cx="12" cy="13" r="4" />
-    </svg>
-  );
-}
+  function CameraIcon({ size = 16, color = "currentColor" }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" style={{ flexShrink: 0 }}>
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+        <circle cx="12" cy="13" r="4" />
+      </svg>
+    );
+  }
 
   const getSidebarMessageContent = (msg) => {
     if (!msg) return "No messages yet";
@@ -811,8 +938,66 @@ function CameraIcon({ size = 16, color = "currentColor" }) {
     return "Attachment";
   };
 
+  const filteredForwardChats = chats.filter((chat) =>
+    getChatName(chat).toLowerCase().includes(forwardSearch.toLowerCase())
+  );
+
   return (
     <>
+      {/* Forward Message Modal */}
+      {showForwardModal && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForwardModal(false); }}>
+          <div className="modal-card">
+            <h3 className="modal-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <ForwardIcon size={18} color="var(--accent-text)" /> Forward Message
+            </h3>
+
+            <p style={{ fontSize: "0.85rem", color: "var(--text-2)", marginBottom: "1rem" }}>
+              Select a chat to forward {forwardingMsg?.file ? (forwardingMsg.file.fileName || "attachment") : "message"}:
+            </p>
+
+            <input
+              className="modal-input"
+              placeholder="Search chat or group..."
+              value={forwardSearch}
+              onChange={(e) => setForwardSearch(e.target.value)}
+            />
+
+            <ul className="modal-user-list" style={{ maxHeight: "240px" }}>
+              {filteredForwardChats.map((chat) => (
+                <li
+                  key={chat._id}
+                  className="modal-user-item"
+                  onClick={() => handleForwardMessage(chat)}
+                >
+                  <div className={`avatar ${chat.isGroupChat ? "avatar-group" : isRecipientOnline(chat) ? "avatar-online" : ""}`} style={{ width: 34, height: 34 }}>
+                    {chat.isGroupChat ? <UsersIcon size={16} /> : getChatAvatarText(chat)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.92rem", fontWeight: 500 }}>{getChatName(chat)}</div>
+                    <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                      {chat.isGroupChat ? "Group Chat" : "Direct Message"}
+                    </div>
+                  </div>
+                  <span style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--accent-text)", fontWeight: 500 }}>
+                    Forward ↪
+                  </span>
+                </li>
+              ))}
+              {filteredForwardChats.length === 0 && (
+                <div style={{ padding: "1.5rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.88rem" }}>
+                  No matching chats found
+                </div>
+              )}
+            </ul>
+
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowForwardModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Media Lightbox Modal */}
       {mediaLightbox && (
         <div className="lightbox-overlay" onClick={() => setMediaLightbox(null)}>
@@ -1149,6 +1334,7 @@ function CameraIcon({ size = 16, color = "currentColor" }) {
 
                   const hasMedia = Boolean(msg.file);
                   const isMediaOnly = hasMedia && (!msg.content || !msg.content.trim());
+                  const isMenuOpen = activeMenuMsgId === msg._id;
 
                   return (
                     <div key={msg._id || idx}>
@@ -1159,6 +1345,65 @@ function CameraIcon({ size = 16, color = "currentColor" }) {
                       )}
                       <div className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}>
                         <div className={`message-bubble ${hasMedia ? "has-media" : ""} ${isMediaOnly ? "media-only-bubble" : ""}`}>
+                          {/* WhatsApp-Style Chevron Action Menu Trigger */}
+                          <button
+                            type="button"
+                            className="message-menu-trigger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuMsgId(isMenuOpen ? null : msg._id);
+                            }}
+                            title="Message options"
+                          >
+                            <ChevronDownIcon size={13} />
+                          </button>
+
+                          {/* WhatsApp-Style Floating Action Context Menu */}
+                          {isMenuOpen && (
+                            <div className="message-context-menu" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                className="context-menu-item"
+                                onClick={() => {
+                                  setActiveMenuMsgId(null);
+                                  setForwardingMsg(msg);
+                                  setShowForwardModal(true);
+                                }}
+                              >
+                                <ForwardIcon size={14} />
+                                <span>Forward</span>
+                              </button>
+
+                              {msg.file && (
+                                <a
+                                  href={`http://localhost:5000${msg.file.url}`}
+                                  download={msg.file.fileName}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="context-menu-item"
+                                  onClick={() => setActiveMenuMsgId(null)}
+                                >
+                                  <DownloadIcon size={14} />
+                                  <span>Download</span>
+                                </a>
+                              )}
+
+                              {isSentByMe && (
+                                <button
+                                  type="button"
+                                  className="context-menu-item danger"
+                                  onClick={() => {
+                                    setActiveMenuMsgId(null);
+                                    handleDeleteMessage(msg._id);
+                                  }}
+                                >
+                                  <TrashIcon size={14} />
+                                  <span>Delete</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+
                           {selectedChat.isGroupChat && !isSentByMe && (
                             <div style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: 600, marginBottom: "0.25rem" }}>
                               {senderName}
@@ -1171,6 +1416,7 @@ function CameraIcon({ size = 16, color = "currentColor" }) {
                               file={msg.file}
                               isSentByMe={isSentByMe}
                               onOpenLightbox={(f) => setMediaLightbox({ url: `http://localhost:5000${f.url}`, fileType: f.fileType, fileName: f.fileName })}
+                              onDelete={() => handleDeleteMessage(msg._id)}
                               timeText={formatTime(msg.createdAt)}
                               tickState={tickState}
                               showTimeOverlay={isMediaOnly}

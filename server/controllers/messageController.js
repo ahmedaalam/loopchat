@@ -37,6 +37,9 @@ exports.getMessages = async (req, res) => {
   }
 };
 
+const fs = require("fs");
+const path = require("path");
+
 // MARK all messages in a chat as read
 exports.markAsRead = async (req, res) => {
   const { chatId } = req.params;
@@ -53,6 +56,49 @@ exports.markAsRead = async (req, res) => {
     );
     res.json({ message: "Messages marked as read" });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// DELETE a message and its file attachment if present
+exports.deleteMessage = async (req, res) => {
+  const { messageId } = req.params;
+
+  try {
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    const senderId = typeof message.sender === "object" ? message.sender._id : message.sender;
+    if (senderId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized to delete this message" });
+    }
+
+    // Delete attachment file from disk if present
+    if (message.file && message.file.url) {
+      const filename = path.basename(message.file.url);
+      const filePath = path.join(__dirname, "../uploads", filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) console.error("Failed to delete attachment file from disk:", err);
+        });
+      }
+    }
+
+    const chatId = message.chat;
+    await Message.findByIdAndDelete(messageId);
+
+    // Update latestMessage in Chat if deleted message was the latest one
+    const chat = await Chat.findById(chatId);
+    if (chat && chat.latestMessage && chat.latestMessage.toString() === messageId.toString()) {
+      const lastRemainingMsg = await Message.findOne({ chat: chatId }).sort({ createdAt: -1 });
+      await Chat.findByIdAndUpdate(chatId, { latestMessage: lastRemainingMsg ? lastRemainingMsg._id : null });
+    }
+
+    res.json({ message: "Message deleted successfully", messageId, chatId });
+  } catch (error) {
+    console.error("Delete Message Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
