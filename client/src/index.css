@@ -2256,6 +2256,12 @@ body {
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18);
 }
 
+.missed-call-icon-sender {
+  background: rgba(163, 163, 163, 0.12);
+  border: 1px solid rgba(163, 163, 163, 0.22);
+  box-shadow: none;
+}
+
 .missed-call-details {
   display: flex;
   flex-direction: column;
@@ -2268,6 +2274,14 @@ body {
   font-weight: 600;
   color: #f87171;
   letter-spacing: -0.01em;
+}
+
+.call-not-answered-title {
+  font-size: 0.93rem;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 .missed-call-sub {

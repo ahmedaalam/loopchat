@@ -72,9 +72,11 @@ function MissedCallIcon({ size = 20 }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <line x1="17" y1="7" x2="7" y2="17" />
-      <polyline points="17 17 7 17 7 7" />
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
+      {/* top-right corner bracket arrow (pointing down-left = missed incoming) */}
+      <polyline points="23 7 23 1 17 1" />
+      <line x1="23" y1="1" x2="17" y2="7" />
+      {/* full phone body */}
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
 }
@@ -84,17 +86,19 @@ function MissedVideoCallIcon({ size = 20 }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 28 24"
       fill="none"
       stroke="#ef4444"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <line x1="17" y1="7" x2="7" y2="17" />
-      <polyline points="17 17 7 17 7 7" />
-      <polygon points="23 7 16 12 23 17 23 7" />
-      <rect x="1" y="5" width="13" height="14" rx="2" ry="2" />
+      {/* top-right corner bracket arrow — separated from camera area */}
+      <polyline points="27 7 27 1 21 1" />
+      <line x1="27" y1="1" x2="21" y2="7" />
+      {/* video camera body — shifted to left portion of viewBox */}
+      <rect x="1" y="6" width="14" height="12" rx="2" ry="2" />
+      <polygon points="19 7 15 12 19 17 19 7" />
     </svg>
   );
 }
@@ -1046,6 +1050,10 @@ function Chat() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
+      // Join the chat room so we receive the missed-call message broadcast
+      // when the server saves it after an unanswered call
+      socket?.emit("join chat", selectedChat._id);
+
       socket?.emit("call user", {
         userToCall: recipient._id,
         offer,
@@ -1139,10 +1147,20 @@ function Chat() {
 
   // End Call
   const endCall = () => {
+    const wasRinging = callState.isCalling && !callState.isConnected;
+    const chatIdForRefetch = selectedChatRef.current?._id;
     if (callState.peerId) {
       socket?.emit("end call", { to: callState.peerId });
     }
     cleanupCall();
+    // If caller cancelled while receiver hadn't answered yet, the server will
+    // save a missed-call message and emit 'receive message'. We re-fetch as a
+    // safety net in case the socket event is delayed or missed.
+    if (wasRinging && chatIdForRefetch) {
+      setTimeout(() => {
+        fetchMessages(chatIdForRefetch);
+      }, 900);
+    }
   };
 
   // Toggle Mic Mute
@@ -1774,6 +1792,25 @@ function Chat() {
 
   const getSidebarMessageContent = (msg) => {
     if (!msg) return "No messages yet";
+    if (msg.callInfo?.isCall) {
+      const isMeSender =
+        (typeof msg.sender === "object" ? msg.sender._id : msg.sender) ===
+        currentUser?.user?._id;
+      if (msg.callInfo.isVideoCall) {
+        return (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+            <VideoIcon size={12} color="var(--accent-text)" />
+            <span>{isMeSender ? "Video call not answered" : "Missed video call"}</span>
+          </span>
+        );
+      }
+      return (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+          <PhoneCallIcon size={12} color="var(--accent-text)" />
+          <span>{isMeSender ? "Voice call not answered" : "Missed voice call"}</span>
+        </span>
+      );
+    }
     if (msg.content) return msg.content;
     if (msg.file) {
       const type = msg.file.fileType;
@@ -2591,47 +2628,75 @@ function Chat() {
 
                           {/* Render Missed Call Card if system call message */}
                           {msg.callInfo?.isCall ? (
-                            <div className="missed-call-card">
-                              <div className="missed-call-icon">
-                                {msg.callInfo.isVideoCall ? (
-                                  <MissedVideoCallIcon size={20} />
-                                ) : (
-                                  <MissedCallIcon size={20} />
-                                )}
-                              </div>
-                              <div className="missed-call-details">
-                                <span className="missed-call-title">
-                                  {msg.callInfo.isVideoCall
-                                    ? "Missed video call"
-                                    : "Missed voice call"}
-                                </span>
-                                <span className="missed-call-sub">
-                                  {formatTime(msg.createdAt)}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                className="missed-call-back-btn"
-                                onClick={() => initiateCall(msg.callInfo.isVideoCall)}
-                                title={
-                                  msg.callInfo.isVideoCall
-                                    ? "Start video call back"
-                                    : "Start voice call back"
-                                }
-                              >
-                                {msg.callInfo.isVideoCall ? (
-                                  <>
-                                    <VideoIcon size={14} color="currentColor" />
-                                    <span>Call Back</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <PhoneCallIcon size={14} color="currentColor" />
-                                    <span>Call Back</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
+                            (() => {
+                              const callSenderId =
+                                typeof msg.sender === "object"
+                                  ? msg.sender._id
+                                  : msg.sender;
+                              const iMadethisCall =
+                                callSenderId === currentUser?.user?._id;
+                              return (
+                                <div className="missed-call-card">
+                                  <div className={iMadethisCall ? "missed-call-icon missed-call-icon-sender" : "missed-call-icon"}>
+                                    {iMadethisCall ? (
+                                      msg.callInfo.isVideoCall ? (
+                                        <VideoIcon size={18} color="var(--text-2)" />
+                                      ) : (
+                                        <PhoneCallIcon size={18} color="var(--text-2)" />
+                                      )
+                                    ) : (
+                                      msg.callInfo.isVideoCall ? (
+                                        <MissedVideoCallIcon size={20} />
+                                      ) : (
+                                        <MissedCallIcon size={20} />
+                                      )
+                                    )}
+                                  </div>
+                                  <div className="missed-call-details">
+                                    {iMadethisCall ? (
+                                      <span className="call-not-answered-title">
+                                        {msg.callInfo.isVideoCall ? "Video call" : "Voice call"}
+                                        <br />
+                                        not answered
+                                      </span>
+                                    ) : (
+                                      <span className="missed-call-title">
+                                        {msg.callInfo.isVideoCall
+                                          ? "Missed video call"
+                                          : "Missed voice call"}
+                                      </span>
+                                    )}
+                                    <span className="missed-call-sub">
+                                      {formatTime(msg.createdAt)}
+                                    </span>
+                                  </div>
+                                  {!iMadethisCall && (
+                                    <button
+                                      type="button"
+                                      className="missed-call-back-btn"
+                                      onClick={() => initiateCall(msg.callInfo.isVideoCall)}
+                                      title={
+                                        msg.callInfo.isVideoCall
+                                          ? "Start video call back"
+                                          : "Start voice call back"
+                                      }
+                                    >
+                                      {msg.callInfo.isVideoCall ? (
+                                        <>
+                                          <VideoIcon size={14} color="currentColor" />
+                                          <span>Call Back</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <PhoneCallIcon size={14} color="currentColor" />
+                                          <span>Call Back</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()
                           ) : (
                             <>
                               {/* Render File Attachment if present */}
