@@ -420,6 +420,36 @@ function ArrowLeftIcon({ size = 20, color = "currentColor" }) {
   );
 }
 
+// Filled solid phone icon (Material Design)
+function FilledPhoneIcon({ size = 18, color = "#ffffff" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={color}
+      stroke="none"
+    >
+      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+    </svg>
+  );
+}
+
+// Filled solid video camera icon (Material Design)
+function FilledVideoIcon({ size = 18, color = "#ffffff" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={color}
+      stroke="none"
+    >
+      <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+    </svg>
+  );
+}
+
 // ─── Format Bytes Helper ──────────────────────────────────────────────────────
 function formatBytes(bytes, decimals = 1) {
   if (!bytes || bytes === 0) return "0 B";
@@ -775,6 +805,9 @@ function Chat() {
   // ─── Mobile panel state ───────────────────────────────────────────────────
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
+  // ─── Call-back confirmation modal ────────────────────────────────────────
+  const [callBackModal, setCallBackModal] = useState(null); // { isVideoCall, callerName }
+
   // Close context menus on window click
   useEffect(() => {
     const handleClickOutside = () => {
@@ -1049,6 +1082,12 @@ function Chat() {
 
     const handleCallEnded = () => {
       cleanupCall();
+      // Refetch so the call record (voice/video message) appears
+      // instantly in the chat pane and sidebar for the receiver
+      const activeChatId = selectedChatRef.current?._id;
+      if (activeChatId) {
+        setTimeout(() => fetchMessages(activeChatId), 800);
+      }
     };
 
     socket.on("receive message", handleReceivedMessage);
@@ -1221,23 +1260,32 @@ function Chat() {
       socket?.emit("reject call", { to: callState.peerId });
     }
     cleanupCall();
+    // Refetch so the missed-call record appears instantly in sidebar
+    const chatId = selectedChatRef.current?._id;
+    if (chatId) {
+      setTimeout(() => {
+        fetchMessages(chatId);
+        fetchChats(currentUser?.token);
+      }, 800);
+    }
   };
 
   // End Call
   const endCall = () => {
-    const wasRinging = callState.isCalling && !callState.isConnected;
-    const chatIdForRefetch = selectedChatRef.current?._id;
+    const chatId = selectedChatRef.current?._id;
     if (callState.peerId) {
       socket?.emit("end call", { to: callState.peerId });
     }
     cleanupCall();
-    // If caller cancelled while receiver hadn't answered yet, the server will
-    // save a missed-call message and emit 'receive message'. We re-fetch as a
-    // safety net in case the socket event is delayed or missed.
-    if (wasRinging && chatIdForRefetch) {
+    // Always refetch after any call ends (missed, rejected, or connected).
+    // The server saves a call-record message and broadcasts 'receive message'
+    // via socket, but we refetch as a reliable safety-net so the call message
+    // appears instantly in the chat pane and the sidebar preview.
+    if (chatId) {
       setTimeout(() => {
-        fetchMessages(chatIdForRefetch);
-      }, 900);
+        fetchMessages(chatId);
+        fetchChats(currentUser?.token);
+      }, 800);
     }
   };
 
@@ -1901,10 +1949,11 @@ function Chat() {
               gap: "0.3rem",
             }}
           >
-            <VideoIcon size={12} color="var(--accent-text)" />
-            <span>
-              {isMeSender ? "Video call not answered" : "Missed video call"}
-            </span>
+            <FilledVideoIcon
+              size={12}
+              color={isMeSender ? "var(--accent-text)" : "#ef4444"}
+            />
+            <span>{isMeSender ? "Video call" : "Missed video call"}</span>
           </span>
         );
       }
@@ -1916,10 +1965,11 @@ function Chat() {
             gap: "0.3rem",
           }}
         >
-          <PhoneCallIcon size={12} color="var(--accent-text)" />
-          <span>
-            {isMeSender ? "Voice call not answered" : "Missed voice call"}
-          </span>
+          <FilledPhoneIcon
+            size={12}
+            color={isMeSender ? "var(--accent-text)" : "#ef4444"}
+          />
+          <span>{isMeSender ? "Voice call" : "Missed voice call"}</span>
         </span>
       );
     }
@@ -2227,6 +2277,55 @@ function Chat() {
         </div>
       )}
 
+      {/* ===== CALL-BACK CONFIRMATION MODAL (WhatsApp-style) ===== */}
+      {callBackModal && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCallBackModal(null);
+          }}
+        >
+          <div className="callback-confirm-modal">
+            {/* Avatar circle */}
+            <div className="callbackmodal-avatar">
+              {callBackModal.callerName?.charAt(0).toUpperCase() || "?"}
+            </div>
+
+            {/* Name */}
+            <div className="callbackmodal-name">{callBackModal.callerName}</div>
+
+            {/* Action buttons */}
+            <div className="callbackmodal-actions">
+              <button
+                className="callbackmodal-btn callbackmodal-cancel"
+                onClick={() => setCallBackModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="callbackmodal-btn callbackmodal-accept"
+                onClick={() => {
+                  setCallBackModal(null);
+                  initiateCall(callBackModal.isVideoCall);
+                }}
+              >
+                {callBackModal.isVideoCall ? (
+                  <>
+                    <FilledVideoIcon size={16} color="#fff" />
+                    <span>Video call</span>
+                  </>
+                ) : (
+                  <>
+                    <FilledPhoneIcon size={16} color="#fff" />
+                    <span>Voice call</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Chat Layout */}
       <div
         className={`chat-container${mobileChatOpen && selectedChat ? " mobile-chat-active" : ""}`}
@@ -2435,9 +2534,11 @@ function Chat() {
                                           size={8}
                                         />
                                       )}
-                                      <span>
-                                        {isMe ? "You:" : `${senderName}:`}
-                                      </span>
+                                      {chat.isGroupChat && (
+                                        <span style={{ fontWeight: 500 }}>
+                                          {isMe ? "You: " : `${senderName}: `}
+                                        </span>
+                                      )}
                                       {getSidebarMessageContent(
                                         chat.latestMessage,
                                       )}
@@ -2788,77 +2889,166 @@ function Chat() {
                                   : msg.sender;
                               const iMadethisCall =
                                 callSenderId === currentUser?.user?._id;
+                              const callLabel = iMadethisCall
+                                ? msg.callInfo.isVideoCall
+                                  ? "Video call"
+                                  : "Voice call"
+                                : msg.callInfo.isVideoCall
+                                  ? "Missed video call"
+                                  : "Missed voice call";
+                              const senderNameForBack =
+                                typeof msg.sender === "object"
+                                  ? msg.sender.name
+                                  : "them";
                               return (
-                                <div className="missed-call-card">
+                                <div
+                                  className="missed-call-card missed-call-card-clickable"
+                                  onClick={() =>
+                                    setCallBackModal({
+                                      isVideoCall: msg.callInfo.isVideoCall,
+                                      callerName: senderNameForBack,
+                                    })
+                                  }
+                                  title="Click to call back"
+                                >
                                   <div
                                     className={
                                       iMadethisCall
                                         ? "missed-call-icon missed-call-icon-sender"
                                         : "missed-call-icon"
                                     }
+                                    style={{ position: "relative" }}
                                   >
-                                    {iMadethisCall ? (
-                                      msg.callInfo.isVideoCall ? (
-                                        <VideoIcon size={18} color="#ffffff" />
-                                      ) : (
-                                        <PhoneCallIcon
-                                          size={18}
-                                          color="#ffffff"
+                                    {/* ── VOICE CALL: icon + arrow (customize below) ── */}
+                                    {!msg.callInfo.isVideoCall && (
+                                      <>
+                                        <FilledPhoneIcon
+                                          size={24}
+                                          color={
+                                            iMadethisCall
+                                              ? "#ffffff"
+                                              : "#ef4444"
+                                          }
                                         />
-                                      )
-                                    ) : msg.callInfo.isVideoCall ? (
-                                      <MissedVideoCallIcon size={20} />
-                                    ) : (
-                                      <MissedCallIcon size={20} />
+                                        {/* Voice call arrow badge */}
+                                        <svg
+                                          style={{
+                                            position: "absolute",
+                                            ...(iMadethisCall
+                                              ? { top: "12px", right: "12px" }
+                                              : {
+                                                  bottom: "22px",
+                                                  left: "22px",
+                                                }),
+                                          }}
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke={
+                                            iMadethisCall
+                                              ? "#ffffff"
+                                              : "#ef4444"
+                                          }
+                                          strokeWidth="5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          {iMadethisCall ? (
+                                            <>
+                                              <line
+                                                x1="5"
+                                                y1="19"
+                                                x2="19"
+                                                y2="5"
+                                              />
+                                              <polyline points="9 5 19 5 19 15" />
+                                            </>
+                                          ) : (
+                                            <>
+                                              <line
+                                                x1="19"
+                                                y1="5"
+                                                x2="5"
+                                                y2="19"
+                                              />
+                                              <polyline points="15 19 5 19 5 9" />
+                                            </>
+                                          )}
+                                        </svg>
+                                      </>
+                                    )}
+
+                                    {/* ── VIDEO CALL: icon + arrow (customize below) ── */}
+                                    {msg.callInfo.isVideoCall && (
+                                      <>
+                                        <FilledVideoIcon
+                                          size={24}
+                                          color={
+                                            iMadethisCall
+                                              ? "#ffffff"
+                                              : "#ef4444"
+                                          }
+                                        />
+                                        {/* Video call arrow badge */}
+                                        <svg
+                                          style={{
+                                            position: "absolute",
+                                            ...(iMadethisCall
+                                              ? { top: "17px", right: "19px" }
+                                              : {
+                                                  bottom: "17px",
+                                                  left: "15px",
+                                                }),
+                                          }}
+                                          width="10"
+                                          height="10"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="rgba(0, 0, 0, 0.755)"
+                                          strokeWidth="5"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          {iMadethisCall ? (
+                                            <>
+                                              <line
+                                                x1="5"
+                                                y1="19"
+                                                x2="19"
+                                                y2="5"
+                                              />
+                                              <polyline points="9 5 19 5 19 15" />
+                                            </>
+                                          ) : (
+                                            <>
+                                              <line
+                                                x1="19"
+                                                y1="5"
+                                                x2="5"
+                                                y2="19"
+                                              />
+                                              <polyline points="15 19 5 19 5 9" />
+                                            </>
+                                          )}
+                                        </svg>
+                                      </>
                                     )}
                                   </div>
                                   <div className="missed-call-details">
                                     {iMadethisCall ? (
                                       <span className="call-not-answered-title">
-                                        {msg.callInfo.isVideoCall
-                                          ? "Video call"
-                                          : "Voice call"}
+                                        {callLabel}
                                       </span>
                                     ) : (
                                       <span className="missed-call-title">
-                                        {msg.callInfo.isVideoCall
-                                          ? "Missed video call"
-                                          : "Missed voice call"}
+                                        {callLabel}
                                       </span>
                                     )}
+                                    <span className="missed-call-tap-hint">
+                                      Tap to call back
+                                    </span>
                                   </div>
-                                  {!iMadethisCall && (
-                                    <button
-                                      type="button"
-                                      className="missed-call-back-btn"
-                                      onClick={() =>
-                                        initiateCall(msg.callInfo.isVideoCall)
-                                      }
-                                      title={
-                                        msg.callInfo.isVideoCall
-                                          ? "Start video call back"
-                                          : "Start voice call back"
-                                      }
-                                    >
-                                      {msg.callInfo.isVideoCall ? (
-                                        <>
-                                          <VideoIcon
-                                            size={14}
-                                            color="currentColor"
-                                          />
-                                          <span>Call Back</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <PhoneCallIcon
-                                            size={14}
-                                            color="currentColor"
-                                          />
-                                          <span>Call Back</span>
-                                        </>
-                                      )}
-                                    </button>
-                                  )}
                                 </div>
                               );
                             })()
