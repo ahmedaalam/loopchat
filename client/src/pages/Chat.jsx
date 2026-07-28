@@ -67,15 +67,12 @@ function MissedCallIcon({ size = 20 }) {
       height={size}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#ef4444"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* top-right corner bracket arrow (pointing down-left = missed incoming) */}
-      <polyline points="23 7 23 1 17 1" />
-      <line x1="23" y1="1" x2="17" y2="7" />
-      {/* full phone body */}
+      {/* plain phone icon, no arrow */}
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
@@ -86,19 +83,16 @@ function MissedVideoCallIcon({ size = 20 }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 28 24"
+      viewBox="0 0 24 24"
       fill="none"
-      stroke="#ef4444"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* top-right corner bracket arrow — separated from camera area */}
-      <polyline points="27 7 27 1 21 1" />
-      <line x1="27" y1="1" x2="21" y2="7" />
-      {/* video camera body — shifted to left portion of viewBox */}
+      {/* plain video camera icon, no arrow */}
       <rect x="1" y="6" width="14" height="12" rx="2" ry="2" />
-      <polygon points="19 7 15 12 19 17 19 7" />
+      <polygon points="23 7 16 12 23 17 23 7" />
     </svg>
   );
 }
@@ -362,6 +356,42 @@ function SendIcon({ size = 18, color = "currentColor" }) {
     >
       <line x1="22" y1="2" x2="11" y2="13" />
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
+function SunIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+
+function MoonIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({ size = 20, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
     </svg>
   );
 }
@@ -704,6 +734,18 @@ function Chat() {
   const messagesEndRef = useRef(null);
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // ─── Theme: light is default, dark is opt-in ─────────────────────────────
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("lc-theme") === "dark");
+
+  useEffect(() => {
+    const theme = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("lc-theme", theme);
+  }, [isDark]);
+
+  // ─── Mobile panel state ───────────────────────────────────────────────────
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   // Close context menus on window click
   useEffect(() => {
@@ -1428,6 +1470,7 @@ function Chat() {
       fetchMessages(data._id);
       setSearchQuery("");
       setSearchResults([]);
+      setMobileChatOpen(true);
     } catch (err) {
       console.error("Error accessing chat:", err);
     }
@@ -1437,6 +1480,7 @@ function Chat() {
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     fetchMessages(chat._id);
+    setMobileChatOpen(true);
   };
 
   // Typing handler
@@ -2116,18 +2160,41 @@ function Chat() {
       )}
 
       {/* Main Chat Layout */}
-      <div className="chat-container">
+      <div className={`chat-container${mobileChatOpen && selectedChat ? " mobile-chat-active" : ""}`}>
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
-          {/* TOP: Brand + New Group */}
+          {/* TOP: Brand + Theme Toggle + New Group */}
           <div className="sidebar-top">
             <LoopChatLogo size={24} textSize="1rem" />
-            <button
-              className="new-group-btn"
-              onClick={() => setShowGroupModal(true)}
-            >
-              + Group
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+              <button
+                type="button"
+                onClick={() => setIsDark(prev => !prev)}
+                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-2)",
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "var(--transition)",
+                  flexShrink: 0,
+                }}
+              >
+                {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+              </button>
+              <button
+                className="new-group-btn"
+                onClick={() => setShowGroupModal(true)}
+              >
+                + Group
+              </button>
+            </div>
           </div>
 
           {/* MIDDLE: Search + Chat list */}
@@ -2374,6 +2441,15 @@ function Chat() {
               {/* Header */}
               <div className="chat-header">
                 <div className="chat-user-info">
+                  {/* Mobile back button */}
+                  <button
+                    type="button"
+                    className="mobile-back-btn"
+                    onClick={() => setMobileChatOpen(false)}
+                    title="Back to chats"
+                  >
+                    <ArrowLeftIcon size={20} />
+                  </button>
                   <div
                     className={`avatar ${selectedChat.isGroupChat ? "avatar-group" : isRecipientOnline(selectedChat) ? "avatar-online" : ""}`}
                   >
@@ -2640,9 +2716,9 @@ function Chat() {
                                   <div className={iMadethisCall ? "missed-call-icon missed-call-icon-sender" : "missed-call-icon"}>
                                     {iMadethisCall ? (
                                       msg.callInfo.isVideoCall ? (
-                                        <VideoIcon size={18} color="var(--text-2)" />
+                                        <VideoIcon size={18} color="#ffffff" />
                                       ) : (
-                                        <PhoneCallIcon size={18} color="var(--text-2)" />
+                                        <PhoneCallIcon size={18} color="#ffffff" />
                                       )
                                     ) : (
                                       msg.callInfo.isVideoCall ? (
