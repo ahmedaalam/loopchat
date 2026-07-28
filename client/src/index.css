@@ -881,7 +881,7 @@ body {
 
 .forgot-password-link:hover {
   text-decoration: underline;
-  color: #fff;
+  color: var(--accent);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1460,7 +1460,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 10, 10, 0.88);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px);
   z-index: 999;
   display: flex;
@@ -2093,7 +2093,7 @@ body {
 
 .reaction-btn:hover {
   transform: scale(1.3);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
 }
 
 /* Reaction Pills on Message Bubble */
@@ -2418,7 +2418,7 @@ body {
 .call-not-answered-title {
   font-size: 0.93rem;
   font-weight: 600;
-  color: var(--text-1);
+  color: inherit;
   letter-spacing: -0.01em;
   line-height: 1.35;
 }

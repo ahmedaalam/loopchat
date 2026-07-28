@@ -362,8 +362,16 @@ function SendIcon({ size = 18, color = "currentColor" }) {
 
 function SunIcon({ size = 18, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="12" r="5" />
       <line x1="12" y1="1" x2="12" y2="3" />
       <line x1="12" y1="21" x2="12" y2="23" />
@@ -379,8 +387,16 @@ function SunIcon({ size = 18, color = "currentColor" }) {
 
 function MoonIcon({ size = 18, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
@@ -388,8 +404,16 @@ function MoonIcon({ size = 18, color = "currentColor" }) {
 
 function ArrowLeftIcon({ size = 20, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="19" y1="12" x2="5" y2="12" />
       <polyline points="12 19 5 12 12 5" />
     </svg>
@@ -410,7 +434,9 @@ function formatBytes(bytes, decimals = 1) {
 function getSidebarMessageContent(message) {
   if (!message) return "";
   if (message.callInfo && message.callInfo.isCall) {
-    return message.callInfo.isVideoCall ? "↙ Missed video call" : "↙ Missed voice call";
+    return message.callInfo.isVideoCall
+      ? "↙ Missed video call"
+      : "↙ Missed voice call";
   }
   if (message.content) return message.content;
   if (message.file) {
@@ -736,7 +762,9 @@ function Chat() {
   const typingTimeoutRef = useRef(null);
 
   // ─── Theme: light is default, dark is opt-in ─────────────────────────────
-  const [isDark, setIsDark] = useState(() => localStorage.getItem("lc-theme") === "dark");
+  const [isDark, setIsDark] = useState(
+    () => localStorage.getItem("lc-theme") === "dark",
+  );
 
   useEffect(() => {
     const theme = isDark ? "dark" : "light";
@@ -818,10 +846,10 @@ function Chat() {
     (chatUsers) => {
       if (!currentUser || !chatUsers || !Array.isArray(chatUsers)) return null;
       return chatUsers.find(
-        (u) => (typeof u === "object" ? u._id : u) !== currentUser.user._id
+        (u) => (typeof u === "object" ? u._id : u) !== currentUser.user._id,
       );
     },
-    [currentUser]
+    [currentUser],
   );
 
   // WebRTC Cleanup Helper
@@ -985,7 +1013,7 @@ function Chat() {
       if (peerConnectionRef.current) {
         try {
           await peerConnectionRef.current.setRemoteDescription(
-            new RTCSessionDescription(answer)
+            new RTCSessionDescription(answer),
           );
           setCallState((prev) => ({
             ...prev,
@@ -1005,7 +1033,9 @@ function Chat() {
     const handleIceCandidate = async ({ candidate }) => {
       if (candidate && peerConnectionRef.current) {
         try {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+          await peerConnectionRef.current.addIceCandidate(
+            new RTCIceCandidate(candidate),
+          );
         } catch (err) {
           console.error("Error adding ice candidate:", err);
         }
@@ -1077,7 +1107,10 @@ function Chat() {
 
       pc.onicecandidate = (e) => {
         if (e.candidate) {
-          socket?.emit("ice candidate", { to: recipient._id, candidate: e.candidate });
+          socket?.emit("ice candidate", {
+            to: recipient._id,
+            candidate: e.candidate,
+          });
         }
       };
 
@@ -1143,7 +1176,10 @@ function Chat() {
 
       pc.onicecandidate = (e) => {
         if (e.candidate) {
-          socket?.emit("ice candidate", { to: callState.peerId, candidate: e.candidate });
+          socket?.emit("ice candidate", {
+            to: callState.peerId,
+            candidate: e.candidate,
+          });
         }
       };
 
@@ -1256,7 +1292,9 @@ function Chat() {
 
   const cancelRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
       mediaRecorderRef.current.stop();
     }
     clearInterval(recordingTimerRef.current);
@@ -1270,12 +1308,16 @@ function Chat() {
 
     mediaRecorderRef.current.onstop = async () => {
       clearInterval(recordingTimerRef.current);
-      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: "audio/webm",
+      });
       const audioFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, {
         type: "audio/webm",
       });
 
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
       setIsRecording(false);
       setRecordingTime(0);
 
@@ -1283,12 +1325,16 @@ function Chat() {
         const formData = new FormData();
         formData.append("file", audioFile);
 
-        const uploadRes = await axios.post("http://localhost:5000/api/upload", formData, {
-          headers: {
-            Authorization: `Bearer ${currentUser.token}`,
-            "Content-Type": "multipart/form-data",
+        const uploadRes = await axios.post(
+          "http://localhost:5000/api/upload",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${currentUser.token}`,
+              "Content-Type": "multipart/form-data",
+            },
           },
-        });
+        );
 
         const { data } = await axios.post(
           "http://localhost:5000/api/message",
@@ -1305,7 +1351,13 @@ function Chat() {
           const updated = prev.map((c) =>
             c._id === selectedChat._id ? { ...c, latestMessage: data } : c,
           );
-          return updated.sort((a, b) => (a._id === selectedChat._id ? -1 : b._id === selectedChat._id ? 1 : 0));
+          return updated.sort((a, b) =>
+            a._id === selectedChat._id
+              ? -1
+              : b._id === selectedChat._id
+                ? 1
+                : 0,
+          );
         });
 
         socket?.emit("send message", data);
@@ -1842,16 +1894,32 @@ function Chat() {
         currentUser?.user?._id;
       if (msg.callInfo.isVideoCall) {
         return (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.3rem",
+            }}
+          >
             <VideoIcon size={12} color="var(--accent-text)" />
-            <span>{isMeSender ? "Video call not answered" : "Missed video call"}</span>
+            <span>
+              {isMeSender ? "Video call not answered" : "Missed video call"}
+            </span>
           </span>
         );
       }
       return (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.3rem",
+          }}
+        >
           <PhoneCallIcon size={12} color="var(--accent-text)" />
-          <span>{isMeSender ? "Voice call not answered" : "Missed voice call"}</span>
+          <span>
+            {isMeSender ? "Voice call not answered" : "Missed voice call"}
+          </span>
         </span>
       );
     }
@@ -2160,16 +2228,25 @@ function Chat() {
       )}
 
       {/* Main Chat Layout */}
-      <div className={`chat-container${mobileChatOpen && selectedChat ? " mobile-chat-active" : ""}`}>
+      <div
+        className={`chat-container${mobileChatOpen && selectedChat ? " mobile-chat-active" : ""}`}
+      >
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
           {/* TOP: Brand + Theme Toggle + New Group */}
           <div className="sidebar-top">
             <LoopChatLogo size={24} textSize="1rem" />
-            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginLeft: "auto" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                marginLeft: "auto",
+              }}
+            >
               <button
                 type="button"
-                onClick={() => setIsDark(prev => !prev)}
+                onClick={() => setIsDark((prev) => !prev)}
                 title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                 style={{
                   background: "transparent",
@@ -2713,27 +2790,34 @@ function Chat() {
                                 callSenderId === currentUser?.user?._id;
                               return (
                                 <div className="missed-call-card">
-                                  <div className={iMadethisCall ? "missed-call-icon missed-call-icon-sender" : "missed-call-icon"}>
+                                  <div
+                                    className={
+                                      iMadethisCall
+                                        ? "missed-call-icon missed-call-icon-sender"
+                                        : "missed-call-icon"
+                                    }
+                                  >
                                     {iMadethisCall ? (
                                       msg.callInfo.isVideoCall ? (
                                         <VideoIcon size={18} color="#ffffff" />
                                       ) : (
-                                        <PhoneCallIcon size={18} color="#ffffff" />
+                                        <PhoneCallIcon
+                                          size={18}
+                                          color="#ffffff"
+                                        />
                                       )
+                                    ) : msg.callInfo.isVideoCall ? (
+                                      <MissedVideoCallIcon size={20} />
                                     ) : (
-                                      msg.callInfo.isVideoCall ? (
-                                        <MissedVideoCallIcon size={20} />
-                                      ) : (
-                                        <MissedCallIcon size={20} />
-                                      )
+                                      <MissedCallIcon size={20} />
                                     )}
                                   </div>
                                   <div className="missed-call-details">
                                     {iMadethisCall ? (
                                       <span className="call-not-answered-title">
-                                        {msg.callInfo.isVideoCall ? "Video call" : "Voice call"}
-                                        <br />
-                                        not answered
+                                        {msg.callInfo.isVideoCall
+                                          ? "Video call"
+                                          : "Voice call"}
                                       </span>
                                     ) : (
                                       <span className="missed-call-title">
@@ -2742,15 +2826,14 @@ function Chat() {
                                           : "Missed voice call"}
                                       </span>
                                     )}
-                                    <span className="missed-call-sub">
-                                      {formatTime(msg.createdAt)}
-                                    </span>
                                   </div>
                                   {!iMadethisCall && (
                                     <button
                                       type="button"
                                       className="missed-call-back-btn"
-                                      onClick={() => initiateCall(msg.callInfo.isVideoCall)}
+                                      onClick={() =>
+                                        initiateCall(msg.callInfo.isVideoCall)
+                                      }
                                       title={
                                         msg.callInfo.isVideoCall
                                           ? "Start video call back"
@@ -2759,12 +2842,18 @@ function Chat() {
                                     >
                                       {msg.callInfo.isVideoCall ? (
                                         <>
-                                          <VideoIcon size={14} color="currentColor" />
+                                          <VideoIcon
+                                            size={14}
+                                            color="currentColor"
+                                          />
                                           <span>Call Back</span>
                                         </>
                                       ) : (
                                         <>
-                                          <PhoneCallIcon size={14} color="currentColor" />
+                                          <PhoneCallIcon
+                                            size={14}
+                                            color="currentColor"
+                                          />
                                           <span>Call Back</span>
                                         </>
                                       )}
@@ -2788,7 +2877,9 @@ function Chat() {
                                     })
                                   }
                                   onToggleMenu={() =>
-                                    setActiveMenuMsgId(isMenuOpen ? null : msg._id)
+                                    setActiveMenuMsgId(
+                                      isMenuOpen ? null : msg._id,
+                                    )
                                   }
                                   timeText={formatTime(msg.createdAt)}
                                   tickState={tickState}
@@ -2920,8 +3011,16 @@ function Chat() {
                   {isRecording ? (
                     <div className="recording-bar">
                       <div className="recording-dot" />
-                      <span className="recording-timer">{formatTimer(recordingTime)}</span>
-                      <span style={{ fontSize: "0.82rem", color: "var(--text-2)", marginLeft: "auto" }}>
+                      <span className="recording-timer">
+                        {formatTimer(recordingTime)}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.82rem",
+                          color: "var(--text-2)",
+                          marginLeft: "auto",
+                        }}
+                      >
                         Recording audio note...
                       </span>
                       <button

@@ -42,7 +42,7 @@ function LoopChatLogo({ size = 36, showText = true, textSize = "1.25rem" }) {
             fontSize: textSize,
             fontWeight: 700,
             letterSpacing: "-0.4px",
-            color: "#ffffff",
+            color: "var(--text-1)",
             lineHeight: 1,
           }}
         >
