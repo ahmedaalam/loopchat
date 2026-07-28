@@ -16,9 +16,9 @@
   --border-soft: rgba(0, 0, 0, 0.05);
 
   /* Accent */
-  --accent: #0078d4;
-  --accent-hover: #0066b8;
-  --accent-dim: rgba(0, 120, 212, 0.1);
+  --accent: #cfe8fb;
+  --accent-hover: #bcdcfa;
+  --accent-dim: rgba(207, 232, 251, 0.45);
   --accent-text: #0063b1;
 
   /* Text */
@@ -31,7 +31,7 @@
   --danger: #ef4444;
 
   /* Bubbles */
-  --bubble-out: #0078d4;
+  --bubble-out: #cfe8fb;
   --bubble-in: #e9ebf0;
 
   /* Misc */
@@ -508,16 +508,18 @@ body {
 
 .sidebar-list {
   list-style: none;
+  padding: 0 8px;
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.8rem 1.25rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 4px;
   cursor: pointer;
   transition: background 0.12s var(--ease);
-  border-radius: 0;
+  border-radius: 12px;
   position: relative;
 }
 
@@ -531,6 +533,19 @@ body {
 
 .sidebar-item.active .item-name {
   color: var(--accent-text);
+}
+
+[data-theme="dark"] .sidebar-item:hover {
+  background: #202c33;
+}
+
+[data-theme="dark"] .sidebar-item.active {
+  background: #2a3942;
+}
+
+[data-theme="dark"] .sidebar-item.active .item-name {
+  color: #f1f5f9;
+  font-weight: 600;
 }
 
 .item-details {
@@ -2765,4 +2780,159 @@ body {
 
 .callbackmodal-accept:active {
   transform: scale(0.97);
+}
+
+/* ╔═══════════════════════════════════════════════════════╗
+   ║  LIGHT THEME — CHAT MESSAGE UI OVERRIDES              ║
+   ║  Dark mode styles above are completely untouched.     ║
+   ║  Everything below only activates on light theme.      ║
+   ╚═══════════════════════════════════════════════════════╝ */
+
+/* ── Messages pane: warm light background ───────────────────────────────── */
+html:not([data-theme="dark"]) .messages-pane {
+  background: #F5F1EB;
+}
+
+/* ── Date separators: slightly muted on warm bg ─────────────────────────── */
+html:not([data-theme="dark"]) .date-separator {
+  color: #8d9099;
+}
+html:not([data-theme="dark"]) .date-separator::before,
+html:not([data-theme="dark"]) .date-separator::after {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* ── Received bubble: white card, dark text, soft shadow ────────────────── */
+html:not([data-theme="dark"]) .message-wrapper.received .message-bubble {
+  background: #ffffff;
+  color: #111827;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Sent bubble: lightest tint of #0078d4 — WhatsApp-style light sent ──── */
+html:not([data-theme="dark"]) .message-wrapper.sent .message-bubble {
+  background: #cfe8fb; /* palest blue tint of brand color */
+  color: #0a1929; /* near-black for readability */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Timestamp in received bubble ───────────────────────────────────────── */
+html:not([data-theme="dark"]) .message-wrapper.received .message-info {
+  color: #92929d;
+}
+
+/* ── Timestamp in sent bubble (light mode) ──────────────────────────────── */
+html:not([data-theme="dark"]) .message-wrapper.sent .message-info {
+  color: rgba(10, 25, 41, 0.5);
+}
+
+/* ── Ticks inside sent bubble — dark on light blue bg ───────────────────── */
+html:not([data-theme="dark"]) .message-wrapper.sent .tick-sent svg path,
+html:not([data-theme="dark"]) .message-wrapper.sent .tick-delivered svg path {
+  stroke: rgba(10, 25, 41, 0.4);
+}
+html:not([data-theme="dark"]) .message-wrapper.sent .tick-read svg path {
+  stroke: #0078d4;
+}
+
+/* ── Sidebar ticks — white stroke is invisible on light sidebar bg ────── */
+html:not([data-theme="dark"]) .item-msg .tick-sent svg path,
+html:not([data-theme="dark"]) .item-msg .tick-delivered svg path {
+  stroke: #9ca3af;
+}
+html:not([data-theme="dark"]) .item-msg .tick-read svg path {
+  stroke: #0078d4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — RECEIVED CALL CARD (on white received bubble)
+   The dark overlay approach looks wrong on a light card. Instead use a
+   clean, card-in-card look with dark text — proper light mode aesthetic.
+═══════════════════════════════════════════════════════════════════════════ */
+html:not([data-theme="dark"]) .message-wrapper.received .missed-call-card {
+  background: rgba(0, 0, 0, 0.04);
+  box-shadow: none;
+}
+
+/* Missed-call (received) icon circle — red tint, clearly visible on white */
+html:not([data-theme="dark"]) .message-wrapper.received .missed-call-icon {
+  background: #ffffff;
+}
+
+/* Missed call title: red so it matches the icon color */
+html:not([data-theme="dark"]) .message-wrapper.received .missed-call-title {
+  color: #111827;
+}
+
+/* "Tap to call back" hint: muted gray */
+html:not([data-theme="dark"]) .message-wrapper.received .missed-call-tap-hint {
+  color: #6b7280;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — SENT CALL CARD (on light-blue #cfe8fb sent bubble)
+   Bubble is now light, so use dark text and blue-tinted icon circle.
+═══════════════════════════════════════════════════════════════════════════ */
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-card {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Outgoing call icon: blue-tinted circle on the light bubble */
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-icon-sender {
+  background: #ffffff;
+}
+
+/* Text colors: dark on the light blue bubble */
+html:not([data-theme="dark"]) .message-wrapper.sent .call-not-answered-title,
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-title,
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-tap-hint {
+  color: #0a1929;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT THEME — GLOBAL LIGHT BLUE (#cfe8fb) ACCENT OVERRIDES
+═══════════════════════════════════════════════════════════════════════════ */
+html:not([data-theme="dark"]) .send-button,
+html:not([data-theme="dark"]) .auth-button,
+html:not([data-theme="dark"]) .callbackmodal-accept,
+html:not([data-theme="dark"]) .notification-badge {
+  background: #cfe8fb;
+  color: #0a1929;
+}
+
+html:not([data-theme="dark"]) .send-button:hover,
+html:not([data-theme="dark"]) .auth-button:hover,
+html:not([data-theme="dark"]) .callbackmodal-accept:hover {
+  background: #bcdcfa;
+  color: #0a1929;
+}
+
+html:not([data-theme="dark"]) .avatar:not(.avatar-group) {
+  background: #cfe8fb;
+  color: #0a1929;
+}
+
+html:not([data-theme="dark"]) .sidebar-item:hover {
+  background: #f6f5f4;
+}
+
+html:not([data-theme="dark"]) .sidebar-item.active {
+  background: #f6f5f4;
+}
+
+html:not([data-theme="dark"]) .sidebar-item.active .item-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+html:not([data-theme="dark"]) .search-input {
+  background: #f6f5f4;
+  border-color: transparent;
+}
+
+html:not([data-theme="dark"]) .search-input:focus {
+  background: #ffffff;
+  border: 2px solid #f6f5f4;
+  border-color: #0ea5e9;
 }

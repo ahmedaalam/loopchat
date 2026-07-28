@@ -1950,8 +1950,8 @@ function Chat() {
             }}
           >
             <FilledVideoIcon
-              size={12}
-              color={isMeSender ? "var(--accent-text)" : "#ef4444"}
+              size={16}
+              color={isDark ? (isMeSender ? "var(--accent-text)" : "#ef4444") : "#626262"}
             />
             <span>{isMeSender ? "Video call" : "Missed video call"}</span>
           </span>
@@ -1966,8 +1966,8 @@ function Chat() {
           }}
         >
           <FilledPhoneIcon
-            size={12}
-            color={isMeSender ? "var(--accent-text)" : "#ef4444"}
+            size={16}
+            color={isDark ? (isMeSender ? "var(--accent-text)" : "#ef4444") : "#626262"}
           />
           <span>{isMeSender ? "Voice call" : "Missed voice call"}</span>
         </span>
@@ -2528,12 +2528,15 @@ function Chat() {
                                         gap: "0.3rem",
                                       }}
                                     >
-                                      {isMe && !chat.isGroupChat && (
-                                        <TickIcon
-                                          tickState={sidebarTickState}
-                                          size={8}
-                                        />
-                                      )}
+                                      {isMe &&
+                                        !chat.isGroupChat &&
+                                        !chat.latestMessage?.callInfo
+                                          ?.isCall && (
+                                          <TickIcon
+                                            tickState={sidebarTickState}
+                                            size={8}
+                                          />
+                                        )}
                                       {chat.isGroupChat && (
                                         <span style={{ fontWeight: 500 }}>
                                           {isMe ? "You: " : `${senderName}: `}
@@ -2919,14 +2922,16 @@ function Chat() {
                                     }
                                     style={{ position: "relative" }}
                                   >
-                                    {/* ── VOICE CALL: icon + arrow (customize below) ── */}
+                                    {/* ── VOICE CALL: icon + arrow ── */}
                                     {!msg.callInfo.isVideoCall && (
                                       <>
                                         <FilledPhoneIcon
                                           size={24}
                                           color={
                                             iMadethisCall
-                                              ? "#ffffff"
+                                              ? isDark
+                                                ? "#ffffff"
+                                                : "#0a1929"
                                               : "#ef4444"
                                           }
                                         />
@@ -2947,7 +2952,9 @@ function Chat() {
                                           fill="none"
                                           stroke={
                                             iMadethisCall
-                                              ? "#ffffff"
+                                              ? isDark
+                                                ? "#ffffff"
+                                                : "#0a1929"
                                               : "#ef4444"
                                           }
                                           strokeWidth="5"
@@ -2979,14 +2986,16 @@ function Chat() {
                                       </>
                                     )}
 
-                                    {/* ── VIDEO CALL: icon + arrow (customize below) ── */}
+                                    {/* ── VIDEO CALL: icon + arrow ── */}
                                     {msg.callInfo.isVideoCall && (
                                       <>
                                         <FilledVideoIcon
-                                          size={24}
+                                          size={26}
                                           color={
                                             iMadethisCall
-                                              ? "#ffffff"
+                                              ? isDark
+                                                ? "#ffffff"
+                                                : "#0a1929"
                                               : "#ef4444"
                                           }
                                         />
@@ -3005,7 +3014,11 @@ function Chat() {
                                           height="10"
                                           viewBox="0 0 24 24"
                                           fill="none"
-                                          stroke="rgba(0, 0, 0, 0.755)"
+                                          stroke={
+                                            isDark
+                                              ? "rgba(0, 0, 0, 0.755)"
+                                              : "#ffffff"
+                                          }
                                           strokeWidth="5"
                                           strokeLinecap="round"
                                           strokeLinejoin="round"
