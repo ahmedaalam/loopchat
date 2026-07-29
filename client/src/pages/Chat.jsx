@@ -543,6 +543,97 @@ function SearchIcon({ size = 16, color = "currentColor" }) {
   );
 }
 
+function LogOutIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function ChatsTabIcon({ size = 22, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function CallsTabIcon({ size = 22, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
+
+function GroupsTabIcon({ size = 22, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function ProfileTabIcon({ size = 22, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
 function ReplyIcon({ size = 16, color = "currentColor" }) {
   return (
     <svg
@@ -832,9 +923,19 @@ function Chat() {
   // WhatsApp-style Action Context Menu State
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
   const [showChatHeaderMenu, setShowChatHeaderMenu] = useState(false);
+  const [showSidebarHeaderMenu, setShowSidebarHeaderMenu] = useState(false);
   const [forwardingMsg, setForwardingMsg] = useState(null);
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [forwardSearch, setForwardSearch] = useState("");
+
+  // Left Navigation Rail Active Tab ('chats' | 'calls' | 'groups' | 'profile')
+  const [activeNavTab, setActiveNavTab] = useState("chats");
+
+  // Calls tab & New Call modal state
+  const [callsSearchQuery, setCallsSearchQuery] = useState("");
+  const [showNewCallModal, setShowNewCallModal] = useState(false);
+  const [newCallSearch, setNewCallSearch] = useState("");
+  const [newCallSearchResults, setNewCallSearchResults] = useState([]);
 
   // Sidebar search
   const [searchQuery, setSearchQuery] = useState("");
@@ -962,6 +1063,7 @@ function Chat() {
     const handleClickOutside = () => {
       setActiveMenuMsgId(null);
       setShowChatHeaderMenu(false);
+      setShowSidebarHeaderMenu(false);
     };
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
@@ -970,7 +1072,33 @@ function Chat() {
   // Mark messages in chat as read
   const markChatAsRead = useCallback(
     async (chatId) => {
-      if (!currentUser) return;
+      if (!currentUser || !chatId) return;
+
+      // Clear notifications locally for this chat
+      setNotifications((prev) =>
+        prev.filter((n) => (typeof n.chat === "object" ? n.chat?._id : n.chat) !== chatId),
+      );
+
+      // Update chats list state so latestMessage.readBy contains current user
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c._id === chatId && c.latestMessage) {
+            const readBy = c.latestMessage.readBy || [];
+            const currentUserId = currentUser.user._id;
+            if (!readBy.some((id) => (typeof id === "object" ? id._id : id) === currentUserId)) {
+              return {
+                ...c,
+                latestMessage: {
+                  ...c.latestMessage,
+                  readBy: [...readBy, currentUserId],
+                },
+              };
+            }
+          }
+          return c;
+        }),
+      );
+
       try {
         await axios.put(
           `http://localhost:5000/api/message/${chatId}/read`,
@@ -1748,8 +1876,10 @@ function Chat() {
 
   // Select existing chat
   const handleSelectChat = (chat) => {
+    if (!chat) return;
     setSelectedChat(chat);
     fetchMessages(chat._id);
+    markChatAsRead(chat._id);
     setMobileChatOpen(true);
   };
 
@@ -2153,6 +2283,37 @@ function Chat() {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+  const formatCallTime = (dateStr) => {
+    if (!dateStr) return "";
+    const msgDate = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const sameDay = (a, b) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    const timeStr = msgDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (sameDay(msgDate, today)) return timeStr;
+    if (sameDay(msgDate, yesterday)) return `Yesterday`;
+
+    const daysAgo = Math.floor((today - msgDate) / 86400000);
+    if (daysAgo < 7) {
+      return msgDate.toLocaleDateString([], { weekday: "long" });
+    }
+    return msgDate.toLocaleDateString([], {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
   const getDateLabel = (dateStr) => {
     const msgDate = new Date(dateStr);
@@ -2614,289 +2775,829 @@ function Chat() {
       <div
         className={`chat-container${mobileChatOpen && selectedChat ? " mobile-chat-active" : ""}`}
       >
+        {/* ===== WHATSAPP WEB-STYLE LEFT VERTICAL NAVIGATION RAIL ===== */}
+        <div className="nav-rail">
+          <div className="nav-rail-top">
+            <button
+              type="button"
+              className={`nav-rail-item ${activeNavTab === "chats" ? "active" : ""}`}
+              onClick={() => setActiveNavTab("chats")}
+              title="Chats"
+            >
+              <ChatsTabIcon size={22} />
+              {notifications.length > 0 && (
+                <span className="nav-rail-badge">{notifications.length}</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`nav-rail-item ${activeNavTab === "calls" ? "active" : ""}`}
+              onClick={() => setActiveNavTab("calls")}
+              title="Calls History"
+            >
+              <CallsTabIcon size={22} />
+            </button>
+
+            <button
+              type="button"
+              className={`nav-rail-item ${activeNavTab === "groups" ? "active" : ""}`}
+              onClick={() => setActiveNavTab("groups")}
+              title="Groups & Communities"
+            >
+              <GroupsTabIcon size={22} />
+            </button>
+          </div>
+
+          <div className="nav-rail-bottom">
+            <button
+              type="button"
+              className="nav-rail-item"
+              onClick={() => setIsDark((prev) => !prev)}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? (
+                <SunIcon size={20} color="#eab308" />
+              ) : (
+                <MoonIcon size={20} color="#626262" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`nav-rail-item profile-rail-thumb ${activeNavTab === "profile" ? "active" : ""}`}
+              onClick={() => setActiveNavTab("profile")}
+              title="Your Profile"
+            >
+              {renderUserAvatar(currentUser?.user, 32)}
+            </button>
+          </div>
+        </div>
+
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
-          {/* TOP: Brand + Profile + Theme Toggle + New Group */}
-          <div className="sidebar-top">
-            <div
-              className="user-profile-trigger"
-              onClick={openProfileEditModal}
-              title="Click to edit your profile"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                cursor: "pointer",
-              }}
-            >
-              {renderUserAvatar(currentUser?.user, 34)}
-            </div>
-            <LoopChatLogo size={22} textSize="0.95rem" />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                marginLeft: "auto",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setIsDark((prev) => !prev)}
-                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                style={{
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-2)",
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "var(--transition)",
-                  flexShrink: 0,
-                }}
-              >
-                {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-              </button>
-              <button
-                className="new-group-btn"
-                onClick={() => setShowGroupModal(true)}
-              >
-                + Group
-              </button>
-            </div>
-          </div>
-
-          {/* MIDDLE: Search + Chat list */}
-          <div className="sidebar-search">
-            <div className="search-input-wrapper">
-              <span className="search-icon-left">
-                <SearchIcon size={16} color="var(--text-3)" />
-              </span>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search or start new chat"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  className="search-clear"
-                  onClick={() => setSearchQuery("")}
+          {/* TAB 1: CHATS VIEW */}
+          {activeNavTab === "chats" && (
+            <>
+              <div className="sidebar-top">
+                <LoopChatLogo size={22} textSize="0.98rem" />
+                <div
+                  style={{
+                    marginLeft: "auto",
+                    display: "flex",
+                    gap: "0.4rem",
+                    position: "relative",
+                  }}
                 >
-                  <CrossIcon size={12} />
-                </button>
-              )}
-            </div>
-          </div>
+                  <button
+                    type="button"
+                    className="sidebar-menu-dots-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSidebarHeaderMenu((prev) => !prev);
+                    }}
+                    title="Menu"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-2)",
+                      cursor: "pointer",
+                      padding: "0.35rem",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MoreVerticalIcon size={20} />
+                  </button>
 
-          <div className="sidebar-list-container">
-            {searchQuery ? (
-              <>
-                <div className="list-section-title">Search Results</div>
-                <ul className="sidebar-list">
-                  {searchResults.map((user) => (
-                    <li
-                      key={user._id}
-                      className="sidebar-item"
-                      onClick={() => handleSelectUser(user._id)}
-                    >
+                  {showSidebarHeaderMenu && (
+                    <>
                       <div
-                        className={`avatar ${onlineUsers.includes(user._id) ? "avatar-online" : ""}`}
+                        className="dropdown-backdrop"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowSidebarHeaderMenu(false);
+                        }}
+                      />
+                      <div
+                        className="header-dropdown-menu"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          position: "absolute",
+                          right: 0,
+                          top: "2.4rem",
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "10px",
+                          boxShadow: "var(--shadow-lg)",
+                          padding: "0.4rem",
+                          zIndex: 100,
+                          minWidth: "160px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.2rem",
+                        }}
                       >
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="item-details">
-                        <div className="item-name">{user.name}</div>
-                        <div
-                          className="item-msg"
-                          style={{ fontSize: "0.8rem" }}
+                        <button
+                          type="button"
+                          className="context-menu-item"
+                          onClick={() => {
+                            setShowSidebarHeaderMenu(false);
+                            setShowGroupModal(true);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.6rem",
+                            padding: "0.6rem 0.8rem",
+                            width: "100%",
+                            textAlign: "left",
+                            background: "transparent",
+                            border: "none",
+                            color: "var(--text-1)",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            fontSize: "0.88rem",
+                            fontWeight: "500",
+                          }}
                         >
-                          {user.email}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                  {searchResults.length === 0 && (
-                    <div
-                      style={{
-                        padding: "1.5rem",
-                        color: "var(--text-muted)",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      No users found
-                    </div>
-                  )}
-                </ul>
-              </>
-            ) : (
-              <>
-                <div className="list-section-title">Recent Chats</div>
-                <ul className="sidebar-list">
-                  {chats.map((chat) => {
-                    const isSelected = selectedChat?._id === chat._id;
-                    const chatNotifications = notifications.filter(
-                      (n) => n.chat === chat._id,
-                    );
-                    const online = isRecipientOnline(chat);
+                          <UsersIcon size={16} color="var(--accent)" />
+                          <span>Create group</span>
+                        </button>
 
-                    return (
+                        <button
+                          type="button"
+                          className="context-menu-item danger"
+                          onClick={() => {
+                            setShowSidebarHeaderMenu(false);
+                            handleLogout();
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.6rem",
+                            padding: "0.6rem 0.8rem",
+                            width: "100%",
+                            textAlign: "left",
+                            background: "transparent",
+                            border: "none",
+                            color: "#ef4444",
+                            cursor: "pointer",
+                            borderRadius: "6px",
+                            fontSize: "0.88rem",
+                            fontWeight: "500",
+                          }}
+                        >
+                          <LogOutIcon size={16} color="#ef4444" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-search">
+                <div className="search-input-wrapper">
+                  <span className="search-icon-left">
+                    <SearchIcon size={16} color="var(--text-3)" />
+                  </span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search or start new chat"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="search-clear"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      <CrossIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-list-container">
+                {searchQuery ? (
+                  <>
+                    <div className="list-section-title">Search Results</div>
+                    <ul className="sidebar-list">
+                      {searchResults.map((user) => (
+                        <li
+                          key={user._id}
+                          className="sidebar-item"
+                          onClick={() => handleSelectUser(user._id)}
+                        >
+                          <div
+                            className={`avatar ${onlineUsers.includes(user._id) ? "avatar-online" : ""}`}
+                          >
+                            {renderUserAvatar(user, 40)}
+                          </div>
+                          <div className="item-details">
+                            <div className="item-name">{user.name}</div>
+                            <div
+                              className="item-msg"
+                              style={{ fontSize: "0.8rem" }}
+                            >
+                              {user.email}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                      {searchResults.length === 0 && (
+                        <div
+                          style={{
+                            padding: "1.5rem",
+                            color: "var(--text-muted)",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          No users found
+                        </div>
+                      )}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <div className="list-section-title">Recent Chats</div>
+                    <ul className="sidebar-list">
+                      {chats.map((chat) => {
+                        const isSelected = selectedChat?._id === chat._id;
+                        const chatNotifications = notifications.filter((n) => {
+                          const nChatId =
+                            typeof n.chat === "object" ? n.chat?._id : n.chat;
+                          return nChatId === chat._id;
+                        });
+                        const online = isRecipientOnline(chat);
+
+                        const latestSenderId = chat.latestMessage?.sender
+                          ? typeof chat.latestMessage.sender === "object"
+                            ? chat.latestMessage.sender._id
+                            : chat.latestMessage.sender
+                          : null;
+                        const currentUserId = currentUser?.user?._id;
+                        const isLatestFromOther =
+                          latestSenderId && latestSenderId !== currentUserId;
+                        const readByList = chat.latestMessage?.readBy || [];
+                        const isLatestReadByMe = readByList.some(
+                          (id) =>
+                            (typeof id === "object" ? id._id : id) ===
+                            currentUserId,
+                        );
+                        const isLatestUnread =
+                          isLatestFromOther && !isLatestReadByMe;
+
+                        const unreadCount = isSelected
+                          ? 0
+                          : chatNotifications.length > 0
+                            ? chatNotifications.length
+                            : isLatestUnread
+                              ? 1
+                              : 0;
+
+                        return (
+                          <li
+                            key={chat._id}
+                            className={`sidebar-item ${isSelected ? "active" : ""}`}
+                            onClick={() => handleSelectChat(chat)}
+                          >
+                            <div
+                              className={`avatar ${chat.isGroupChat ? "avatar-group" : online ? "avatar-online" : ""}`}
+                            >
+                              {chat.isGroupChat ? (
+                                <UsersIcon size={16} />
+                              ) : (
+                                renderUserAvatar(getRecipient(chat.users), 40)
+                              )}
+                            </div>
+                            <div className="item-details">
+                              <div className="item-name-row">
+                                <span className="item-name">
+                                  {getChatName(chat)}
+                                  {chat.isGroupChat && (
+                                    <span
+                                      className="group-badge"
+                                      style={{ marginLeft: "0.4rem" }}
+                                    >
+                                      Group
+                                    </span>
+                                  )}
+                                </span>
+                                <span
+                                  className="item-meta"
+                                  style={{
+                                    color:
+                                      unreadCount > 0
+                                        ? "#0078D4"
+                                        : "var(--text-3)",
+                                    fontWeight: unreadCount > 0 ? "600" : "400",
+                                  }}
+                                >
+                                  {formatTime(chat.updatedAt)}
+                                </span>
+                              </div>
+                              <div className="item-subtext-row">
+                                <span
+                                  className="item-msg"
+                                  style={{
+                                    fontWeight: unreadCount > 0 ? "600" : "400",
+                                    color:
+                                      unreadCount > 0
+                                        ? "var(--text-1)"
+                                        : "var(--text-2)",
+                                  }}
+                                >
+                                  {chatNotifications.length > 0 ? (
+                                    <span
+                                      style={{
+                                        color: "var(--accent-text)",
+                                        fontWeight: "600",
+                                      }}
+                                    >
+                                      {getSidebarMessageContent(
+                                        chatNotifications[
+                                          chatNotifications.length - 1
+                                        ],
+                                      )}
+                                    </span>
+                                  ) : chat.latestMessage ? (
+                                    (() => {
+                                      const sender = chat.latestMessage.sender;
+                                      const senderId =
+                                        typeof sender === "object"
+                                          ? sender._id
+                                          : sender;
+                                      const senderName =
+                                        typeof sender === "object"
+                                          ? sender.name
+                                          : "User";
+                                      const isMe =
+                                        senderId === currentUser?.user?._id;
+                                      const latestReadBy =
+                                        chat.latestMessage.readBy || [];
+                                      const sidebarIsRead = latestReadBy.some(
+                                        (id) =>
+                                          (typeof id === "object"
+                                            ? id._id
+                                            : id) !== currentUser?.user?._id,
+                                      );
+                                      const sidebarIsDelivered =
+                                        !chat.isGroupChat &&
+                                        isRecipientOnline(chat);
+                                      const sidebarTickState = sidebarIsRead
+                                        ? "read"
+                                        : sidebarIsDelivered
+                                          ? "delivered"
+                                          : "sent";
+                                      return (
+                                        <span
+                                          style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "0.3rem",
+                                          }}
+                                        >
+                                          {isMe &&
+                                            !chat.isGroupChat &&
+                                            !chat.latestMessage?.callInfo
+                                              ?.isCall && (
+                                              <TickIcon
+                                                tickState={sidebarTickState}
+                                                size={8}
+                                              />
+                                            )}
+                                          {chat.isGroupChat && (
+                                            <span style={{ fontWeight: 500 }}>
+                                              {isMe
+                                                ? "You: "
+                                                : `${senderName}: `}
+                                            </span>
+                                          )}
+                                          {getSidebarMessageContent(
+                                            chat.latestMessage,
+                                          )}
+                                        </span>
+                                      );
+                                    })()
+                                  ) : (
+                                    "No messages yet"
+                                  )}
+                                </span>
+                                {unreadCount > 0 && (
+                                  <span
+                                    className="notification-badge"
+                                    title={`${unreadCount} unread`}
+                                  >
+                                    {unreadCount}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {chats.length === 0 && (
+                        <div
+                          style={{
+                            padding: "2rem",
+                            color: "var(--text-muted)",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          No active chats. Search for a user to start chatting!
+                        </div>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* TAB 2: CALLS HISTORY VIEW */}
+          {activeNavTab === "calls" && (
+            <>
+              <div className="sidebar-top">
+                <h2 className="sidebar-tab-title">Calls</h2>
+                <button
+                  type="button"
+                  className="new-group-btn"
+                  onClick={() => setShowNewCallModal(true)}
+                  style={{
+                    marginLeft: "auto",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                  }}
+                >
+                  <PhoneCallIcon size={14} color="#fff" />
+                  <span>+ Call</span>
+                </button>
+              </div>
+
+              <div className="sidebar-search">
+                <div className="search-input-wrapper">
+                  <span className="search-icon-left">
+                    <SearchIcon size={16} color="var(--text-3)" />
+                  </span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search call history"
+                    value={callsSearchQuery}
+                    onChange={(e) => setCallsSearchQuery(e.target.value)}
+                  />
+                  {callsSearchQuery && (
+                    <button
+                      className="search-clear"
+                      onClick={() => setCallsSearchQuery("")}
+                    >
+                      <CrossIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-list-container">
+                <div className="list-section-title">Recent Call Logs</div>
+                <ul className="sidebar-list">
+                  {(() => {
+                    const logs = [];
+                    chats.forEach((chat) => {
+                      if (chat.latestMessage?.callInfo?.isCall) {
+                        logs.push({ chat, msg: chat.latestMessage });
+                      }
+                    });
+                    messages.forEach((msg) => {
+                      if (msg.callInfo?.isCall && selectedChat) {
+                        if (!logs.some((l) => l.msg._id === msg._id)) {
+                          logs.push({ chat: selectedChat, msg });
+                        }
+                      }
+                    });
+
+                    const filteredLogs = logs.filter((item) => {
+                      if (!callsSearchQuery.trim()) return true;
+                      const partner = getRecipient(item.chat.users);
+                      return partner?.name
+                        ?.toLowerCase()
+                        .includes(callsSearchQuery.toLowerCase());
+                    });
+
+                    if (filteredLogs.length === 0) {
+                      return (
+                        <div
+                          style={{
+                            padding: "2rem",
+                            color: "var(--text-muted)",
+                            fontSize: "0.9rem",
+                            textAlign: "center",
+                          }}
+                        >
+                          No call history found. Click <strong>+ Call</strong>{" "}
+                          to make your first call!
+                        </div>
+                      );
+                    }
+
+                    return filteredLogs.map(({ chat, msg }) => {
+                      const partner = getRecipient(chat.users);
+                      const callSenderId =
+                        typeof msg.sender === "object"
+                          ? msg.sender._id
+                          : msg.sender;
+                      const iMadeCall = callSenderId === currentUser?.user?._id;
+
+                      return (
+                        <li
+                          key={msg._id}
+                          className="sidebar-item call-log-item"
+                        >
+                          <div className="avatar">
+                            {renderUserAvatar(partner, 40)}
+                          </div>
+                          <div className="item-details">
+                            <div className="item-name-row">
+                              <span className="item-name">
+                                {partner?.name || getChatName(chat)}
+                              </span>
+                              <span className="item-meta">
+                                {formatCallTime(msg.createdAt)}
+                              </span>
+                            </div>
+                            <div className="item-subtext-row">
+                              <span
+                                className="item-msg"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "0.35rem",
+                                  color:
+                                    !iMadeCall && msg.callInfo?.isMissed
+                                      ? "#ef4444"
+                                      : "var(--text-2)",
+                                }}
+                              >
+                                {msg.callInfo?.isVideoCall ? (
+                                  <FilledVideoIcon
+                                    size={14}
+                                    color={
+                                      !iMadeCall && msg.callInfo?.isMissed
+                                        ? "#ef4444"
+                                        : "var(--text-3)"
+                                    }
+                                  />
+                                ) : (
+                                  <FilledPhoneIcon
+                                    size={14}
+                                    color={
+                                      !iMadeCall && msg.callInfo?.isMissed
+                                        ? "#ef4444"
+                                        : "var(--text-3)"
+                                    }
+                                  />
+                                )}
+                                {iMadeCall ? "Outgoing" : "Missed"}
+                              </span>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    });
+                  })()}
+                </ul>
+              </div>
+            </>
+          )}
+
+          {/* TAB 3: GROUPS VIEW */}
+          {activeNavTab === "groups" && (
+            <>
+              <div className="sidebar-top">
+                <h2 className="sidebar-tab-title">Groups</h2>
+                <button
+                  type="button"
+                  className="new-group-btn"
+                  onClick={() => setShowGroupModal(true)}
+                  style={{ marginLeft: "auto" }}
+                >
+                  + Create Group
+                </button>
+              </div>
+
+              <div className="sidebar-search">
+                <div className="search-input-wrapper">
+                  <span className="search-icon-left">
+                    <SearchIcon size={16} color="var(--text-3)" />
+                  </span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search groups"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="search-clear"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      <CrossIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-list-container">
+                <div className="list-section-title">Your Groups</div>
+                <ul className="sidebar-list">
+                  {(() => {
+                    const groupChats = chats.filter((c) => c.isGroupChat);
+                    const filtered = searchQuery.trim()
+                      ? groupChats.filter((c) =>
+                          c.chatName
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()),
+                        )
+                      : groupChats;
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div
+                          style={{
+                            padding: "2rem",
+                            color: "var(--text-muted)",
+                            fontSize: "0.9rem",
+                            textAlign: "center",
+                          }}
+                        >
+                          No groups found. Click <strong>+ Create Group</strong>{" "}
+                          to make one!
+                        </div>
+                      );
+                    }
+
+                    return filtered.map((chat) => (
                       <li
                         key={chat._id}
-                        className={`sidebar-item ${isSelected ? "active" : ""}`}
+                        className={`sidebar-item ${selectedChat?._id === chat._id ? "active" : ""}`}
                         onClick={() => handleSelectChat(chat)}
                       >
-                        <div
-                          className={`avatar ${chat.isGroupChat ? "avatar-group" : online ? "avatar-online" : ""}`}
-                        >
-                          {chat.isGroupChat ? (
-                            <UsersIcon size={16} />
-                          ) : (
-                            renderUserAvatar(getRecipient(chat.users), 40)
-                          )}
+                        <div className="avatar avatar-group">
+                          <UsersIcon size={18} />
                         </div>
                         <div className="item-details">
                           <div className="item-name-row">
-                            <span className="item-name">
-                              {getChatName(chat)}
-                              {chat.isGroupChat && (
-                                <span
-                                  className="group-badge"
-                                  style={{ marginLeft: "0.4rem" }}
-                                >
-                                  Group
-                                </span>
-                              )}
-                            </span>
+                            <span className="item-name">{chat.chatName}</span>
                             <span className="item-meta">
-                              {formatTime(chat.updatedAt)}
+                              {chat.users?.length || 0} members
                             </span>
                           </div>
                           <div className="item-subtext-row">
                             <span className="item-msg">
-                              {chatNotifications.length > 0 ? (
-                                <span
-                                  style={{
-                                    color: "var(--accent)",
-                                    fontWeight: "500",
-                                  }}
-                                >
-                                  {getSidebarMessageContent(
-                                    chatNotifications[
-                                      chatNotifications.length - 1
-                                    ],
-                                  )}
-                                </span>
-                              ) : chat.latestMessage ? (
-                                (() => {
-                                  const sender = chat.latestMessage.sender;
-                                  const senderId =
-                                    typeof sender === "object"
-                                      ? sender._id
-                                      : sender;
-                                  const senderName =
-                                    typeof sender === "object"
-                                      ? sender.name
-                                      : "User";
-                                  const isMe =
-                                    senderId === currentUser?.user?._id;
-                                  const latestReadBy =
-                                    chat.latestMessage.readBy || [];
-                                  const sidebarIsRead = latestReadBy.some(
-                                    (id) =>
-                                      (typeof id === "object" ? id._id : id) !==
-                                      currentUser?.user?._id,
-                                  );
-                                  const sidebarIsDelivered =
-                                    !chat.isGroupChat &&
-                                    isRecipientOnline(chat);
-                                  const sidebarTickState = sidebarIsRead
-                                    ? "read"
-                                    : sidebarIsDelivered
-                                      ? "delivered"
-                                      : "sent";
-                                  return (
-                                    <span
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "0.3rem",
-                                      }}
-                                    >
-                                      {isMe &&
-                                        !chat.isGroupChat &&
-                                        !chat.latestMessage?.callInfo
-                                          ?.isCall && (
-                                          <TickIcon
-                                            tickState={sidebarTickState}
-                                            size={8}
-                                          />
-                                        )}
-                                      {chat.isGroupChat && (
-                                        <span style={{ fontWeight: 500 }}>
-                                          {isMe ? "You: " : `${senderName}: `}
-                                        </span>
-                                      )}
-                                      {getSidebarMessageContent(
-                                        chat.latestMessage,
-                                      )}
-                                    </span>
-                                  );
-                                })()
-                              ) : (
-                                "No messages yet"
-                              )}
+                              {chat.latestMessage
+                                ? getSidebarMessageContent(chat.latestMessage)
+                                : "Group created"}
                             </span>
-                            {chatNotifications.length > 0 && (
-                              <span className="notification-badge">
-                                {chatNotifications.length}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </li>
-                    );
-                  })}
-                  {chats.length === 0 && (
-                    <div
-                      style={{
-                        padding: "2rem",
-                        color: "var(--text-muted)",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      No active chats. Search for a user to start chatting or
-                      create a group!
-                    </div>
-                  )}
+                    ));
+                  })()}
                 </ul>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
 
-          {/* BOTTOM: User profile footer */}
-          <div className="sidebar-profile-footer">
-            <div className="avatar avatar-online">
-              {currentUser?.user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
-            <div className="sidebar-profile-info">
-              <div className="sidebar-profile-name">
-                {currentUser?.user?.name || "..."}
+          {/* TAB 4: INLINE PROFILE VIEW */}
+          {activeNavTab === "profile" && (
+            <>
+              <div className="sidebar-top">
+                <h2 className="sidebar-tab-title">Profile</h2>
               </div>
-              <div className="sidebar-profile-status">
-                <span className="sidebar-status-dot" />
-                Online
+
+              <div
+                className="sidebar-list-container"
+                style={{ padding: "1.2rem 1rem" }}
+              >
+                <form
+                  onSubmit={handleSaveProfile}
+                  className="sidebar-profile-form"
+                >
+                  <div
+                    className="profile-avatar-wrapper"
+                    style={{ margin: "0 auto 1.2rem auto" }}
+                  >
+                    {editAvatar ? (
+                      <img
+                        src={
+                          editAvatar.startsWith("http")
+                            ? editAvatar
+                            : `http://localhost:5000${editAvatar}`
+                        }
+                        alt="Avatar"
+                        className="profile-avatar-img"
+                      />
+                    ) : (
+                      <div className="profile-avatar-placeholder">
+                        {currentUser?.user?.name?.charAt(0).toUpperCase() ||
+                          "?"}
+                      </div>
+                    )}
+                    <label
+                      className="profile-avatar-edit-label"
+                      title="Change photo"
+                    >
+                      <CameraIcon size={16} color="#fff" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarFileUpload}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+
+                  <div
+                    className="profile-input-group"
+                    style={{ marginBottom: "1rem" }}
+                  >
+                    <label>Your Name</label>
+                    <input
+                      type="text"
+                      className="profile-input"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Enter your name"
+                      required
+                    />
+                  </div>
+
+                  <div
+                    className="profile-input-group"
+                    style={{ marginBottom: "1.2rem" }}
+                  >
+                    <label>About / Bio</label>
+                    <input
+                      type="text"
+                      className="profile-input"
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      placeholder="Hey there! I am using LoopChat."
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-create"
+                    style={{
+                      width: "100%",
+                      padding: "0.7rem",
+                      borderRadius: "10px",
+                      fontWeight: "600",
+                    }}
+                    disabled={isUpdatingProfile}
+                  >
+                    {isUpdatingProfile ? "Saving..." : "Save Profile"}
+                  </button>
+                </form>
+
+                <div
+                  className="contact-detail-box"
+                  style={{ marginTop: "1.2rem" }}
+                >
+                  <span className="contact-detail-title">Account Email</span>
+                  <p className="contact-detail-text">
+                    {currentUser?.user?.email}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  style={{
+                    width: "100%",
+                    marginTop: "1.2rem",
+                    padding: "0.75rem",
+                    borderRadius: "10px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    color: "#ef4444",
+                    border: "1px solid rgba(239, 68, 68, 0.25)",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "var(--transition)",
+                  }}
+                >
+                  Logout
+                </button>
               </div>
-            </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
+            </>
+          )}
         </div>
 
         {/* ===== CHAT WINDOW ===== */}
@@ -3052,27 +3753,36 @@ function Chat() {
                     </button>
 
                     {showChatHeaderMenu && (
-                      <div
-                        className="chat-header-dropdown-menu"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          type="button"
-                          className="context-menu-item"
-                          onClick={handleClearChat}
+                      <>
+                        <div
+                          className="dropdown-backdrop"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowChatHeaderMenu(false);
+                          }}
+                        />
+                        <div
+                          className="chat-header-dropdown-menu"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <TrashIcon size={14} />
-                          <span>Clear Chat</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="context-menu-item danger"
-                          onClick={handleDeleteChat}
-                        >
-                          <TrashIcon size={14} />
-                          <span>Delete Chat</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            className="context-menu-item"
+                            onClick={handleClearChat}
+                          >
+                            <TrashIcon size={14} />
+                            <span>Clear Chat</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="context-menu-item danger"
+                            onClick={handleDeleteChat}
+                          >
+                            <TrashIcon size={14} />
+                            <span>Delete Chat</span>
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -3219,7 +3929,8 @@ function Chat() {
                               title="Click to jump to quoted message"
                             >
                               <div className="quoted-sender">
-                                {typeof msg.replyTo === "object" && msg.replyTo.sender
+                                {typeof msg.replyTo === "object" &&
+                                msg.replyTo.sender
                                   ? typeof msg.replyTo.sender === "object"
                                     ? msg.replyTo.sender.name
                                     : "User"
@@ -3228,7 +3939,9 @@ function Chat() {
                               <div className="quoted-text">
                                 {typeof msg.replyTo === "object"
                                   ? msg.replyTo.content ||
-                                    (msg.replyTo.file ? `[${msg.replyTo.file.fileType || "Attachment"}]` : "Message")
+                                    (msg.replyTo.file
+                                      ? `[${msg.replyTo.file.fileType || "Attachment"}]`
+                                      : "Message")
                                   : "Quoted message"}
                               </div>
                             </div>
@@ -3516,10 +4229,16 @@ function Chat() {
                   <div className="reply-preview-bar">
                     <div className="reply-preview-content">
                       <span className="reply-preview-sender">
-                        Replying to {typeof replyingTo.sender === "object" ? replyingTo.sender.name : "User"}
+                        Replying to{" "}
+                        {typeof replyingTo.sender === "object"
+                          ? replyingTo.sender.name
+                          : "User"}
                       </span>
                       <span className="reply-preview-text">
-                        {replyingTo.content || (replyingTo.file ? `[${replyingTo.file.fileType || "Attachment"}]` : "Message")}
+                        {replyingTo.content ||
+                          (replyingTo.file
+                            ? `[${replyingTo.file.fileType || "Attachment"}]`
+                            : "Message")}
                       </span>
                     </div>
                     <button
@@ -3595,97 +4314,97 @@ function Chat() {
                   </div>
                 ) : (
                   <form onSubmit={handleSendMessage} className="input-form">
-                  {isRecording ? (
-                    <div className="recording-bar">
-                      <div className="recording-dot" />
-                      <span className="recording-timer">
-                        {formatTimer(recordingTime)}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "0.82rem",
-                          color: "var(--text-2)",
-                          marginLeft: "auto",
-                        }}
-                      >
-                        Recording audio note...
-                      </span>
-                      <button
-                        type="button"
-                        className="recording-cancel-btn"
-                        onClick={cancelRecording}
-                        title="Discard recording"
-                      >
-                        <TrashIcon size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="recording-send-btn"
-                        onClick={stopAndSendRecording}
-                        title="Send voice note"
-                      >
-                        <SendIcon size={16} color="#ffffff" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="chat-input-container">
-                      <button
-                        type="button"
-                        className="attach-button-inside"
-                        onClick={() => fileInputRef.current?.click()}
-                        title="Attach file or media"
-                        disabled={isRecording}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="20"
-                          height="20"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                    {isRecording ? (
+                      <div className="recording-bar">
+                        <div className="recording-dot" />
+                        <span className="recording-timer">
+                          {formatTimer(recordingTime)}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "0.82rem",
+                            color: "var(--text-2)",
+                            marginLeft: "auto",
+                          }}
                         >
-                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                        </svg>
-                      </button>
-
-                      <input
-                        type="text"
-                        className="chat-input"
-                        placeholder={
-                          pendingFile
-                            ? "Add a caption (optional)..."
-                            : selectedChat.isGroupChat
-                              ? `Message ${selectedChat.chatName}...`
-                              : "Type a message"
-                        }
-                        value={newMessage}
-                        onChange={handleInputChange}
-                      />
-
-                      {!newMessage.trim() && !pendingFile ? (
+                          Recording audio note...
+                        </span>
                         <button
                           type="button"
-                          className="mic-button-inside"
-                          onClick={startRecording}
-                          title="Record voice note"
+                          className="recording-cancel-btn"
+                          onClick={cancelRecording}
+                          title="Discard recording"
                         >
-                          <MicIcon size={20} color="currentColor" />
+                          <TrashIcon size={16} />
                         </button>
-                      ) : (
                         <button
-                          type="submit"
-                          className="send-button-inside"
-                          disabled={!newMessage.trim() && !pendingFile}
-                          title="Send message"
+                          type="button"
+                          className="recording-send-btn"
+                          onClick={stopAndSendRecording}
+                          title="Send voice note"
                         >
-                          <SendIcon size={16} color="currentColor" />
+                          <SendIcon size={16} color="#ffffff" />
                         </button>
-                      )}
-                    </div>
-                  )}
-                </form>
-              )}
-            </div>
+                      </div>
+                    ) : (
+                      <div className="chat-input-container">
+                        <button
+                          type="button"
+                          className="attach-button-inside"
+                          onClick={() => fileInputRef.current?.click()}
+                          title="Attach file or media"
+                          disabled={isRecording}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="20"
+                            height="20"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                          </svg>
+                        </button>
+
+                        <input
+                          type="text"
+                          className="chat-input"
+                          placeholder={
+                            pendingFile
+                              ? "Add a caption (optional)..."
+                              : selectedChat.isGroupChat
+                                ? `Message ${selectedChat.chatName}...`
+                                : "Type a message"
+                          }
+                          value={newMessage}
+                          onChange={handleInputChange}
+                        />
+
+                        {!newMessage.trim() && !pendingFile ? (
+                          <button
+                            type="button"
+                            className="mic-button-inside"
+                            onClick={startRecording}
+                            title="Record voice note"
+                          >
+                            <MicIcon size={20} color="currentColor" />
+                          </button>
+                        ) : (
+                          <button
+                            type="submit"
+                            className="send-button-inside"
+                            disabled={!newMessage.trim() && !pendingFile}
+                            title="Send message"
+                          >
+                            <SendIcon size={16} color="currentColor" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </form>
+                )}
+              </div>
             </>
           ) : (
             <div className="chat-placeholder">
@@ -3754,7 +4473,10 @@ function Chat() {
                     {editName?.charAt(0).toUpperCase() || "?"}
                   </div>
                 )}
-                <label className="profile-avatar-edit-label" title="Change photo">
+                <label
+                  className="profile-avatar-edit-label"
+                  title="Change photo"
+                >
                   <CameraIcon size={16} color="#fff" />
                   <input
                     type="file"
@@ -3869,6 +4591,204 @@ function Chat() {
                   </span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== NEW CALL SELECTOR MODAL ===== */}
+      {showNewCallModal && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowNewCallModal(false);
+          }}
+        >
+          <div className="contact-info-modal" style={{ maxWidth: "420px" }}>
+            <div className="modal-header" style={{ marginBottom: "1rem" }}>
+              <h3>Start a New Call</h3>
+              <button
+                type="button"
+                className="close-modal-btn"
+                onClick={() => setShowNewCallModal(false)}
+              >
+                <CrossIcon size={14} />
+              </button>
+            </div>
+
+            <div
+              className="search-input-wrapper"
+              style={{ marginBottom: "1rem" }}
+            >
+              <span className="search-icon-left">
+                <SearchIcon size={16} color="var(--text-3)" />
+              </span>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search contact to call..."
+                value={newCallSearch}
+                onChange={async (e) => {
+                  const q = e.target.value;
+                  setNewCallSearch(q);
+                  if (q.trim()) {
+                    try {
+                      const token = localStorage.getItem("token");
+                      const res = await axios.get(
+                        `${ENDPOINT}/api/users?search=${q}`,
+                        { headers: { Authorization: `Bearer ${token}` } },
+                      );
+                      setNewCallSearchResults(res.data);
+                    } catch (err) {
+                      console.error("Error searching users for call:", err);
+                    }
+                  } else {
+                    setNewCallSearchResults([]);
+                  }
+                }}
+              />
+            </div>
+
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {newCallSearch.trim()
+                ? newCallSearchResults.map((user) => (
+                    <div
+                      key={user._id}
+                      className="sidebar-item"
+                      style={{ cursor: "default" }}
+                    >
+                      <div className="avatar">{renderUserAvatar(user, 36)}</div>
+                      <div className="item-details">
+                        <div className="item-name">{user.name}</div>
+                        <div
+                          className="item-msg"
+                          style={{ fontSize: "0.78rem" }}
+                        >
+                          {user.email}
+                        </div>
+                      </div>
+                      <div
+                        className="call-quick-actions"
+                        style={{ marginLeft: "auto" }}
+                      >
+                        <button
+                          type="button"
+                          className="call-quick-btn"
+                          title="Voice call"
+                          onClick={async () => {
+                            setShowNewCallModal(false);
+                            try {
+                              const token = localStorage.getItem("token");
+                              const res = await axios.post(
+                                `${ENDPOINT}/api/chat`,
+                                { userId: user._id },
+                                {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                },
+                              );
+                              setSelectedChat(res.data);
+                              setCallBackModal({
+                                isVideoCall: false,
+                                callerName: user.name,
+                              });
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                        >
+                          <PhoneCallIcon size={16} color="var(--accent)" />
+                        </button>
+                        <button
+                          type="button"
+                          className="call-quick-btn"
+                          title="Video call"
+                          onClick={async () => {
+                            setShowNewCallModal(false);
+                            try {
+                              const token = localStorage.getItem("token");
+                              const res = await axios.post(
+                                `${ENDPOINT}/api/chat`,
+                                { userId: user._id },
+                                {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                },
+                              );
+                              setSelectedChat(res.data);
+                              setCallBackModal({
+                                isVideoCall: true,
+                                callerName: user.name,
+                              });
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                        >
+                          <VideoIcon size={16} color="var(--accent)" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                : chats
+                    .filter((c) => !c.isGroupChat)
+                    .map((chat) => {
+                      const partner = getRecipient(chat.users);
+                      if (!partner) return null;
+                      return (
+                        <div
+                          key={chat._id}
+                          className="sidebar-item"
+                          style={{ cursor: "default" }}
+                        >
+                          <div className="avatar">
+                            {renderUserAvatar(partner, 36)}
+                          </div>
+                          <div className="item-details">
+                            <div className="item-name">{partner.name}</div>
+                            <div
+                              className="item-msg"
+                              style={{ fontSize: "0.78rem" }}
+                            >
+                              {partner.email}
+                            </div>
+                          </div>
+                          <div
+                            className="call-quick-actions"
+                            style={{ marginLeft: "auto" }}
+                          >
+                            <button
+                              type="button"
+                              className="call-quick-btn"
+                              title="Voice call"
+                              onClick={() => {
+                                setShowNewCallModal(false);
+                                handleSelectChat(chat);
+                                setCallBackModal({
+                                  isVideoCall: false,
+                                  callerName: partner.name,
+                                });
+                              }}
+                            >
+                              <PhoneCallIcon size={16} color="var(--accent)" />
+                            </button>
+                            <button
+                              type="button"
+                              className="call-quick-btn"
+                              title="Video call"
+                              onClick={() => {
+                                setShowNewCallModal(false);
+                                handleSelectChat(chat);
+                                setCallBackModal({
+                                  isVideoCall: true,
+                                  callerName: partner.name,
+                                });
+                              }}
+                            >
+                              <VideoIcon size={16} color="var(--accent)" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
             </div>
           </div>
         </div>
