@@ -34,7 +34,13 @@
   --bubble-out: #cfe8fb;
   --bubble-in: #e9ebf0;
 
-  /* Misc */
+  /* Misc & Shadows */
+  --bg-main: var(--surface-2);
+  --bg-surface: var(--surface-1);
+  --avatar-text-color: #0078d4;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.16);
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -53,6 +59,12 @@
   --surface-2: #0f0f0f;
   --surface-3: #1a1a1a;
   --surface-4: #222222;
+  --bg-main: var(--surface-2);
+  --bg-surface: var(--surface-1);
+  --avatar-text-color: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.7);
   --border: #1f1f1f;
   --border-soft: rgba(255, 255, 255, 0.04);
   --accent: #0078d4;
@@ -397,6 +409,11 @@ body {
   color: #fff;
   flex-shrink: 0;
   user-select: none;
+}
+
+html:not([data-theme="dark"]) .avatar,
+html:not([data-theme="dark"]) .profile-avatar-placeholder {
+  color: #0078d4 !important;
 }
 
 .avatar-online {
@@ -1123,6 +1140,54 @@ body {
   z-index: 90;
   background: transparent;
   cursor: default;
+}
+
+/* Header Dropdown Menus */
+.header-dropdown-menu,
+.chat-header-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 2.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  z-index: 100;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  animation: fadeUp 0.15s var(--ease);
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-1);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.context-menu-item:hover {
+  background: var(--surface-3);
+}
+
+.context-menu-item.danger {
+  color: var(--danger);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Modal overlay */
@@ -3392,8 +3457,8 @@ html:not([data-theme="dark"]) .nav-rail {
 }
 
 html[data-theme="dark"] .nav-rail {
-  background: #111b21;
-  border-right-color: #222d34;
+  background: #1e1e1e !important;
+  border-right-color: #2b2b2b !important;
 }
 
 .nav-rail-top,
@@ -3447,8 +3512,8 @@ html:not([data-theme="dark"]) .nav-rail-item.active {
 }
 
 html[data-theme="dark"] .nav-rail-item.active {
-  background: #202c33;
-  color: #00a884;
+  background: rgba(0, 120, 212, 0.18) !important;
+  color: #0078d4 !important;
 }
 
 .nav-rail-badge {

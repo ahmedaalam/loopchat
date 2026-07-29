@@ -1028,7 +1028,7 @@ function Chat() {
           height: `${size}px`,
           borderRadius: "50%",
           background: "var(--accent)",
-          color: "#fff",
+          color: "var(--avatar-text-color, #0078d4)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -2817,9 +2817,9 @@ function Chat() {
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDark ? (
-                <SunIcon size={20} color="#eab308" />
+                <SunIcon size={20} color="currentColor" />
               ) : (
-                <MoonIcon size={20} color="#626262" />
+                <MoonIcon size={20} color="currentColor" />
               )}
             </button>
 
