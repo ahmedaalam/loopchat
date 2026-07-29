@@ -22,9 +22,9 @@
   --accent-text: #0063b1;
 
   /* Text */
-  --text-1: #111827;
-  --text-2: #6b7280;
-  --text-3: #9ca3af;
+  --text-1: #0a0a0a;
+  --text-2: #232323;
+  --text-3: #626262;
 
   /* Status */
   --online: #16a34a;
@@ -1206,7 +1206,7 @@ body {
 .btn-create {
   background: var(--accent);
   border: none;
-  color: #fff;
+  color: var(--text-2);
   padding: 0.65rem 1.4rem;
   border-radius: var(--radius-md);
   font-family: var(--font);
@@ -2790,7 +2790,7 @@ body {
 
 /* ── Messages pane: warm light background ───────────────────────────────── */
 html:not([data-theme="dark"]) .messages-pane {
-  background: #F5F1EB;
+  background: #f5f1eb;
 }
 
 /* ── Date separators: slightly muted on warm bg ─────────────────────────── */
@@ -2807,14 +2807,12 @@ html:not([data-theme="dark"]) .message-wrapper.received .message-bubble {
   background: #ffffff;
   color: #111827;
   border: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 /* ── Sent bubble: lightest tint of #0078d4 — WhatsApp-style light sent ──── */
 html:not([data-theme="dark"]) .message-wrapper.sent .message-bubble {
   background: #cfe8fb; /* palest blue tint of brand color */
   color: #0a1929; /* near-black for readability */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ── Timestamp in received bubble ───────────────────────────────────────── */
@@ -2839,7 +2837,7 @@ html:not([data-theme="dark"]) .message-wrapper.sent .tick-read svg path {
 /* ── Sidebar ticks — white stroke is invisible on light sidebar bg ────── */
 html:not([data-theme="dark"]) .item-msg .tick-sent svg path,
 html:not([data-theme="dark"]) .item-msg .tick-delivered svg path {
-  stroke: #9ca3af;
+  stroke: #626262;
 }
 html:not([data-theme="dark"]) .item-msg .tick-read svg path {
   stroke: #0078d4;
@@ -2885,9 +2883,11 @@ html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-icon-sender {
 
 /* Text colors: dark on the light blue bubble */
 html:not([data-theme="dark"]) .message-wrapper.sent .call-not-answered-title,
-html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-title,
-html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-tap-hint {
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-title {
   color: #0a1929;
+}
+html:not([data-theme="dark"]) .message-wrapper.sent .missed-call-tap-hint {
+  color: rgba(10, 25, 41, 0.5);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

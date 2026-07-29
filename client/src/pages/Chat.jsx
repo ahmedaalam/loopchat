@@ -1951,7 +1951,13 @@ function Chat() {
           >
             <FilledVideoIcon
               size={16}
-              color={isDark ? (isMeSender ? "var(--accent-text)" : "#ef4444") : "#626262"}
+              color={
+                isDark
+                  ? isMeSender
+                    ? "var(--accent-text)"
+                    : "#ef4444"
+                  : "#626262"
+              }
             />
             <span>{isMeSender ? "Video call" : "Missed video call"}</span>
           </span>
@@ -1967,7 +1973,13 @@ function Chat() {
         >
           <FilledPhoneIcon
             size={16}
-            color={isDark ? (isMeSender ? "var(--accent-text)" : "#ef4444") : "#626262"}
+            color={
+              isDark
+                ? isMeSender
+                  ? "var(--accent-text)"
+                  : "#ef4444"
+                : "#626262"
+            }
           />
           <span>{isMeSender ? "Voice call" : "Missed voice call"}</span>
         </span>
@@ -2172,7 +2184,7 @@ function Chat() {
 
             <input
               className="modal-input"
-              placeholder="Group name (e.g. Study Squad)"
+              placeholder="Group name"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
             />
@@ -2195,7 +2207,7 @@ function Chat() {
 
             <input
               className="modal-input"
-              placeholder="Search users to add..."
+              placeholder="Search users to add"
               value={groupSearch}
               onChange={(e) => setGroupSearch(e.target.value)}
             />
@@ -2379,7 +2391,7 @@ function Chat() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search or start new chat..."
+                placeholder="Search or start new chat"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -3253,7 +3265,7 @@ function Chat() {
                             ? "Add a caption (optional)..."
                             : selectedChat.isGroupChat
                               ? `Message ${selectedChat.chatName}...`
-                              : "Type a message..."
+                              : "Type a message"
                         }
                         value={newMessage}
                         onChange={handleInputChange}
