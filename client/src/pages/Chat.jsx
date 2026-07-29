@@ -3209,25 +3209,6 @@ function Chat() {
                 )}
 
                 <form onSubmit={handleSendMessage} className="input-form">
-                  <button
-                    type="button"
-                    className="attach-button"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Attach file or media"
-                    disabled={isRecording}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="20"
-                      height="20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                    </svg>
-                  </button>
-
                   {isRecording ? (
                     <div className="recording-bar">
                       <div className="recording-dot" />
@@ -3261,7 +3242,26 @@ function Chat() {
                       </button>
                     </div>
                   ) : (
-                    <>
+                    <div className="chat-input-container">
+                      <button
+                        type="button"
+                        className="attach-button-inside"
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Attach file or media"
+                        disabled={isRecording}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                      </button>
+
                       <input
                         type="text"
                         className="chat-input"
@@ -3279,23 +3279,23 @@ function Chat() {
                       {!newMessage.trim() && !pendingFile ? (
                         <button
                           type="button"
-                          className="mic-button"
+                          className="mic-button-inside"
                           onClick={startRecording}
                           title="Record voice note"
                         >
-                          <MicIcon size={20} color="var(--accent-text)" />
+                          <MicIcon size={20} color="currentColor" />
                         </button>
                       ) : (
                         <button
                           type="submit"
-                          className="send-button"
+                          className="send-button-inside"
                           disabled={!newMessage.trim() && !pendingFile}
                           title="Send message"
                         >
-                          <SendIcon size={18} color="#ffffff" />
+                          <SendIcon size={16} color="currentColor" />
                         </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </form>
               </div>
