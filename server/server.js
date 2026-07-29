@@ -85,6 +85,15 @@ io.on("connection", (socket) => {
     socket.to(room).emit("stop typing", room);
   });
 
+  // recording audio status
+  socket.on("recording audio", (room) => {
+    socket.to(room).emit("recording audio", room);
+  });
+
+  socket.on("stop recording audio", (room) => {
+    socket.to(room).emit("stop recording audio", room);
+  });
+
   // send message to others in room
   socket.on("send message", (data) => {
     // data should contain { chat, sender, content, ... }
@@ -256,7 +265,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     let disconnectedUserId = null;
     for (const [userId, socketId] of Object.entries(onlineUsers)) {
       if (socketId === socket.id) {
@@ -266,7 +275,19 @@ io.on("connection", (socket) => {
       }
     }
     if (disconnectedUserId) {
-      io.emit("online users", Object.keys(onlineUsers));
+      try {
+        const User = require("./models/User");
+        const lastSeen = new Date();
+        await User.findByIdAndUpdate(disconnectedUserId, { lastSeen });
+        io.emit("online users", Object.keys(onlineUsers));
+        io.emit("user status update", {
+          userId: disconnectedUserId,
+          isOnline: false,
+          lastSeen,
+        });
+      } catch (err) {
+        console.error("Error updating lastSeen on disconnect:", err);
+      }
       console.log(`👤 User offline: ${disconnectedUserId}`);
     }
     console.log("❌ User disconnected:", socket.id);

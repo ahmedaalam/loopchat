@@ -543,6 +543,99 @@ function SearchIcon({ size = 16, color = "currentColor" }) {
   );
 }
 
+function ReplyIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="9 17 4 12 9 7" />
+      <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+    </svg>
+  );
+}
+
+function EditIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+function CameraIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
+function BlockIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+    </svg>
+  );
+}
+
+const formatLastSeen = (dateStr) => {
+  if (!dateStr) return "offline";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "offline";
+
+  const now = new Date();
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+
+  const timeStr = d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (isToday) {
+    return `Last seen today at ${timeStr}`;
+  }
+  return `Last seen ${d.toLocaleDateString()} at ${timeStr}`;
+};
+
 // ─── Reusable tick icon ───────────────────────────────────────────────────────
 function TickIcon({ tickState, size = 9 }) {
   const isDouble = tickState !== "sent";
@@ -792,6 +885,60 @@ function Chat() {
   const messagesEndRef = useRef(null);
   const selectedChatRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Profile Edit & View Modals
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Contact Info Modal & Blocking State
+  const [showContactInfoModal, setShowContactInfoModal] = useState(false);
+  const [contactInfoData, setContactInfoData] = useState(null);
+  const [isBlockingActionLoading, setIsBlockingActionLoading] = useState(false);
+
+  // Presence & Replying State
+  const [isPeerRecordingAudio, setIsPeerRecordingAudio] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+
+  const renderUserAvatar = (user, size = 40) => {
+    if (user?.avatar) {
+      const url = user.avatar.startsWith("http")
+        ? user.avatar
+        : `http://localhost:5000${user.avatar}`;
+      return (
+        <img
+          src={url}
+          alt={user.name || "User"}
+          style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
+        />
+      );
+    }
+    return (
+      <div
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: "50%",
+          background: "var(--accent)",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: "bold",
+          fontSize: `${Math.round(size * 0.42)}px`,
+        }}
+      >
+        {user?.name?.charAt(0).toUpperCase() || "?"}
+      </div>
+    );
+  };
 
   // ─── Theme: light is default, dark is opt-in ─────────────────────────────
   const [isDark, setIsDark] = useState(
@@ -1092,6 +1239,13 @@ function Chat() {
       }
     };
 
+    const handleRecordingAudio = (room) => {
+      if (selectedChatRef.current?._id === room) setIsPeerRecordingAudio(true);
+    };
+    const handleStopRecordingAudio = (room) => {
+      if (selectedChatRef.current?._id === room) setIsPeerRecordingAudio(false);
+    };
+
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
     socket.on("message deleted", handleMessageDeleted);
@@ -1099,6 +1253,8 @@ function Chat() {
     socket.on("chat deleted", handleChatDeleted);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
+    socket.on("recording audio", handleRecordingAudio);
+    socket.on("stop recording audio", handleStopRecordingAudio);
     socket.on("incoming call", handleIncomingCall);
     socket.on("call accepted", handleCallAccepted);
     socket.on("ice candidate", handleIceCandidate);
@@ -1113,6 +1269,8 @@ function Chat() {
       socket.off("chat deleted", handleChatDeleted);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
+      socket.off("recording audio", handleRecordingAudio);
+      socket.off("stop recording audio", handleStopRecordingAudio);
       socket.off("incoming call", handleIncomingCall);
       socket.off("call accepted", handleCallAccepted);
       socket.off("ice candidate", handleIceCandidate);
@@ -1331,6 +1489,10 @@ function Chat() {
       setIsRecording(true);
       setRecordingTime(0);
 
+      if (selectedChat) {
+        socket?.emit("recording audio", selectedChat._id);
+      }
+
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -1341,6 +1503,9 @@ function Chat() {
   };
 
   const cancelRecording = () => {
+    if (selectedChat) {
+      socket?.emit("stop recording audio", selectedChat._id);
+    }
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stream
         .getTracks()
@@ -1354,6 +1519,9 @@ function Chat() {
   };
 
   const stopAndSendRecording = () => {
+    if (selectedChat) {
+      socket?.emit("stop recording audio", selectedChat._id);
+    }
     if (!mediaRecorderRef.current || !isRecording) return;
 
     mediaRecorderRef.current.onstop = async () => {
@@ -1640,11 +1808,13 @@ function Chat() {
           content,
           chatId: selectedChat._id,
           file: uploadedFilePayload,
+          replyTo: replyingTo ? replyingTo._id : null,
         },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
 
       setMessages((prev) => [...prev, data]);
+      setReplyingTo(null);
       setChats((prev) => {
         const updated = prev.map((c) =>
           c._id === selectedChat._id ? { ...c, latestMessage: data } : c,
@@ -1657,7 +1827,107 @@ function Chat() {
       socket?.emit("send message", data);
     } catch (err) {
       console.error("Error sending message:", err);
-      alert("Failed to send message/file. Please try again.");
+      const msg =
+        err.response?.data?.message ||
+        "Failed to send message/file. Please try again.";
+      alert(msg);
+    }
+  };
+
+  // Profile & Contact Info Handlers
+  const openProfileEditModal = () => {
+    if (!currentUser?.user) return;
+    setEditName(currentUser.user.name || "");
+    setEditBio(currentUser.user.bio || "Hey there! I am using LoopChat.");
+    setEditAvatar(currentUser.user.avatar || "");
+    setShowProfileModal(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setIsUpdatingProfile(true);
+    try {
+      const { data } = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        { name: editName, bio: editBio, avatar: editAvatar },
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+      const updatedUser = { ...currentUser, user: data };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setShowProfileModal(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      alert("Failed to update profile");
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const { data } = await axios.post(
+        "http://localhost:5000/api/upload",
+        formData,
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+      setEditAvatar(data.url);
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
+      alert("Failed to upload image");
+    }
+  };
+
+  const openContactInfoModal = async () => {
+    if (!selectedChat || selectedChat.isGroupChat || !currentUser) return;
+    const recipient = getRecipientUser(selectedChat.users);
+    if (!recipient || !recipient._id) return;
+    try {
+      const { data } = await axios.get(
+        `http://localhost:5000/api/users/profile/${recipient._id}`,
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+      setContactInfoData(data);
+      setShowContactInfoModal(true);
+    } catch (err) {
+      console.error("Error fetching contact info:", err);
+    }
+  };
+
+  const handleToggleBlockContact = async () => {
+    if (!contactInfoData || !currentUser) return;
+    setIsBlockingActionLoading(true);
+    try {
+      const endpoint = contactInfoData.isBlocked
+        ? `http://localhost:5000/api/users/unblock/${contactInfoData._id}`
+        : `http://localhost:5000/api/users/block/${contactInfoData._id}`;
+      await axios.post(
+        endpoint,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+      setContactInfoData((prev) => ({
+        ...prev,
+        isBlocked: !prev.isBlocked,
+      }));
+    } catch (err) {
+      console.error("Error blocking/unblocking user:", err);
+    } finally {
+      setIsBlockingActionLoading(false);
+    }
+  };
+
+  const scrollToMessage = (msgId) => {
+    const element = document.getElementById(`msg-${msgId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.classList.add("highlight-msg");
+      setTimeout(() => element.classList.remove("highlight-msg"), 1500);
     }
   };
 
@@ -2346,9 +2616,22 @@ function Chat() {
       >
         {/* ===== SIDEBAR ===== */}
         <div className="chat-sidebar">
-          {/* TOP: Brand + Theme Toggle + New Group */}
+          {/* TOP: Brand + Profile + Theme Toggle + New Group */}
           <div className="sidebar-top">
-            <LoopChatLogo size={24} textSize="1rem" />
+            <div
+              className="user-profile-trigger"
+              onClick={openProfileEditModal}
+              title="Click to edit your profile"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                cursor: "pointer",
+              }}
+            >
+              {renderUserAvatar(currentUser?.user, 34)}
+            </div>
+            <LoopChatLogo size={22} textSize="0.95rem" />
             <div
               style={{
                 display: "flex",
@@ -2474,7 +2757,7 @@ function Chat() {
                           {chat.isGroupChat ? (
                             <UsersIcon size={16} />
                           ) : (
-                            getChatAvatarText(chat)
+                            renderUserAvatar(getRecipient(chat.users), 40)
                           )}
                         </div>
                         <div className="item-details">
@@ -2638,12 +2921,26 @@ function Chat() {
             <>
               {/* Header */}
               <div className="chat-header">
-                <div className="chat-user-info">
+                <div
+                  className="chat-user-info"
+                  onClick={openContactInfoModal}
+                  title={
+                    selectedChat.isGroupChat
+                      ? ""
+                      : "Click to view contact info & profile"
+                  }
+                  style={{
+                    cursor: selectedChat.isGroupChat ? "default" : "pointer",
+                  }}
+                >
                   {/* Mobile back button */}
                   <button
                     type="button"
                     className="mobile-back-btn"
-                    onClick={() => setMobileChatOpen(false)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileChatOpen(false);
+                    }}
                     title="Back to chats"
                   >
                     <ArrowLeftIcon size={20} />
@@ -2654,7 +2951,7 @@ function Chat() {
                     {selectedChat.isGroupChat ? (
                       <UsersIcon size={18} />
                     ) : (
-                      getChatAvatarText(selectedChat)
+                      renderUserAvatar(getRecipient(selectedChat.users), 40)
                     )}
                   </div>
                   <div className="chat-user-details">
@@ -2687,11 +2984,22 @@ function Chat() {
                         <span className="typing-dot"></span>
                         <span className="typing-dot"></span>
                       </div>
+                    ) : isPeerRecordingAudio ? (
+                      <div className="typing-status-indicator">
+                        <span>recording audio</span>
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                      </div>
                     ) : (
                       <span
                         className={`chat-user-status ${isRecipientOnline(selectedChat) ? "online" : ""}`}
                       >
-                        {isRecipientOnline(selectedChat) ? "online" : "offline"}
+                        {isRecipientOnline(selectedChat)
+                          ? "online"
+                          : formatLastSeen(
+                              getRecipient(selectedChat.users)?.lastSeen,
+                            )}
                       </span>
                     )}
                   </div>
@@ -2816,6 +3124,7 @@ function Chat() {
                         </div>
                       )}
                       <div
+                        id={`msg-${msg._id}`}
                         className={`message-wrapper ${isSentByMe ? "sent" : "received"}`}
                       >
                         <div
@@ -2844,6 +3153,18 @@ function Chat() {
                               className="message-context-menu"
                               onClick={(e) => e.stopPropagation()}
                             >
+                              <button
+                                type="button"
+                                className="context-menu-item"
+                                onClick={() => {
+                                  setActiveMenuMsgId(null);
+                                  setReplyingTo(msg);
+                                }}
+                              >
+                                <ReplyIcon size={14} />
+                                <span>Reply</span>
+                              </button>
+
                               <button
                                 type="button"
                                 className="context-menu-item"
@@ -2884,6 +3205,32 @@ function Chat() {
                                   <span>Delete</span>
                                 </button>
                               )}
+                            </div>
+                          )}
+
+                          {/* Render Quoted Reply Box if replying to a message */}
+                          {msg.replyTo && (
+                            <div
+                              className="quoted-message-box"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                scrollToMessage(msg.replyTo._id || msg.replyTo);
+                              }}
+                              title="Click to jump to quoted message"
+                            >
+                              <div className="quoted-sender">
+                                {typeof msg.replyTo === "object" && msg.replyTo.sender
+                                  ? typeof msg.replyTo.sender === "object"
+                                    ? msg.replyTo.sender.name
+                                    : "User"
+                                  : "Original message"}
+                              </div>
+                              <div className="quoted-text">
+                                {typeof msg.replyTo === "object"
+                                  ? msg.replyTo.content ||
+                                    (msg.replyTo.file ? `[${msg.replyTo.file.fileType || "Attachment"}]` : "Message")
+                                  : "Quoted message"}
+                              </div>
                             </div>
                           )}
 
@@ -3164,6 +3511,28 @@ function Chat() {
                   accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
                 />
 
+                {/* Quoted Reply Preview Bar */}
+                {replyingTo && (
+                  <div className="reply-preview-bar">
+                    <div className="reply-preview-content">
+                      <span className="reply-preview-sender">
+                        Replying to {typeof replyingTo.sender === "object" ? replyingTo.sender.name : "User"}
+                      </span>
+                      <span className="reply-preview-text">
+                        {replyingTo.content || (replyingTo.file ? `[${replyingTo.file.fileType || "Attachment"}]` : "Message")}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="reply-preview-close"
+                      onClick={() => setReplyingTo(null)}
+                      title="Cancel reply"
+                    >
+                      <CrossIcon size={12} />
+                    </button>
+                  </div>
+                )}
+
                 {/* Pending File Attachment Bar */}
                 {pendingFile && (
                   <div className="pending-file-bar">
@@ -3208,7 +3577,24 @@ function Chat() {
                   </div>
                 )}
 
-                <form onSubmit={handleSendMessage} className="input-form">
+                {contactInfoData?.isBlocked ? (
+                  <div className="blocked-banner">
+                    <span>You have blocked this contact.</span>
+                    <button
+                      type="button"
+                      className="unblock-btn-small"
+                      onClick={handleToggleBlockContact}
+                      disabled={isBlockingActionLoading}
+                    >
+                      {isBlockingActionLoading ? "Unblocking..." : "Unblock"}
+                    </button>
+                  </div>
+                ) : contactInfoData?.isBlockedBy ? (
+                  <div className="blocked-banner">
+                    <span>You cannot send messages to this contact.</span>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendMessage} className="input-form">
                   {isRecording ? (
                     <div className="recording-bar">
                       <div className="recording-dot" />
@@ -3298,7 +3684,8 @@ function Chat() {
                     </div>
                   )}
                 </form>
-              </div>
+              )}
+            </div>
             </>
           ) : (
             <div className="chat-placeholder">
@@ -3329,6 +3716,163 @@ function Chat() {
           )}
         </div>
       </div>
+
+      {/* ===== EDIT PROFILE MODAL ===== */}
+      {showProfileModal && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowProfileModal(false);
+          }}
+        >
+          <div className="profile-edit-modal">
+            <div className="modal-header">
+              <h3>Edit Profile</h3>
+              <button
+                type="button"
+                className="close-modal-btn"
+                onClick={() => setShowProfileModal(false)}
+              >
+                <CrossIcon size={14} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="profile-edit-form">
+              <div className="profile-avatar-wrapper">
+                {editAvatar ? (
+                  <img
+                    src={
+                      editAvatar.startsWith("http")
+                        ? editAvatar
+                        : `http://localhost:5000${editAvatar}`
+                    }
+                    alt="Avatar"
+                    className="profile-avatar-img"
+                  />
+                ) : (
+                  <div className="profile-avatar-placeholder">
+                    {editName?.charAt(0).toUpperCase() || "?"}
+                  </div>
+                )}
+                <label className="profile-avatar-edit-label" title="Change photo">
+                  <CameraIcon size={16} color="#fff" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileUpload}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              </div>
+
+              <div className="profile-input-group">
+                <label>Your Name</label>
+                <input
+                  type="text"
+                  className="profile-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+
+              <div className="profile-input-group">
+                <label>About / Bio</label>
+                <input
+                  type="text"
+                  className="profile-input"
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Hey there! I am using LoopChat."
+                />
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: "1.5rem" }}>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowProfileModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-create"
+                  disabled={isUpdatingProfile}
+                >
+                  {isUpdatingProfile ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===== CONTACT INFO / PROFILE CARD MODAL ===== */}
+      {showContactInfoModal && contactInfoData && (
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowContactInfoModal(false);
+          }}
+        >
+          <div className="contact-info-modal">
+            <div className="contact-modal-top">
+              <button
+                type="button"
+                className="close-modal-btn"
+                onClick={() => setShowContactInfoModal(false)}
+                style={{ marginLeft: "auto" }}
+              >
+                <CrossIcon size={14} />
+              </button>
+            </div>
+
+            <div className="contact-profile-card">
+              <div className="contact-avatar-lg">
+                {renderUserAvatar(contactInfoData, 90)}
+              </div>
+              <h2 className="contact-name">{contactInfoData.name}</h2>
+              <p className="contact-email">{contactInfoData.email}</p>
+
+              <div className="contact-detail-box">
+                <span className="contact-detail-title">About / Bio</span>
+                <p className="contact-detail-text">
+                  {contactInfoData.bio || "Hey there! I am using LoopChat."}
+                </p>
+              </div>
+
+              <div className="contact-detail-box">
+                <span className="contact-detail-title">Status</span>
+                <p className="contact-detail-text">
+                  {onlineUsers.includes(contactInfoData._id)
+                    ? "Online"
+                    : formatLastSeen(contactInfoData.lastSeen)}
+                </p>
+              </div>
+
+              <div className="contact-actions" style={{ marginTop: "1.5rem" }}>
+                <button
+                  type="button"
+                  className={`btn-block-contact ${contactInfoData.isBlocked ? "blocked" : ""}`}
+                  onClick={handleToggleBlockContact}
+                  disabled={isBlockingActionLoading}
+                >
+                  <BlockIcon size={16} />
+                  <span>
+                    {isBlockingActionLoading
+                      ? "Updating..."
+                      : contactInfoData.isBlocked
+                        ? "Unblock Contact"
+                        : "Block Contact"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* WebRTC Voice & Video Call Overlay Modal */}
       <CallModal

@@ -45,6 +45,11 @@ const messageSchema = new mongoose.Schema(
       isMissed: { type: Boolean, default: false },
       duration: { type: Number, default: 0 },
     },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
   },
   { timestamps: true }
 );

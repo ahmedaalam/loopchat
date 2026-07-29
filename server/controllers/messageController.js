@@ -1,11 +1,32 @@
 const Message = require("../models/Message");
 const Chat = require("../models/Chat");
+const User = require("../models/User");
 
 exports.sendMessage = async (req, res) => {
-  const { content, chatId, file } = req.body;
+  const { content, chatId, file, replyTo } = req.body;
 
   if ((!content && !file) || !chatId) {
     return res.status(400).json({ message: "Invalid data: content or file attachment required" });
+  }
+
+  // Check if chat is a 1-on-1 chat and if either user has blocked the other
+  const targetChat = await Chat.findById(chatId).populate("users");
+  if (targetChat && !targetChat.isGroupChat) {
+    const recipient = targetChat.users.find(
+      (u) => u._id.toString() !== req.user.toString()
+    );
+    const currentUser = await User.findById(req.user);
+    if (recipient && currentUser) {
+      const isBlocked = currentUser.blockedUsers?.some(
+        (id) => id.toString() === recipient._id.toString()
+      );
+      const isBlockedBy = recipient.blockedUsers?.some(
+        (id) => id.toString() === req.user.toString()
+      );
+      if (isBlocked || isBlockedBy) {
+        return res.status(403).json({ message: "Cannot send message to a blocked contact" });
+      }
+    }
   }
 
   let message = await Message.create({
@@ -14,9 +35,16 @@ exports.sendMessage = async (req, res) => {
     file: file || null,
     chat: chatId,
     readBy: [req.user],
+    replyTo: replyTo || null,
   });
 
-  message = await message.populate("sender", "name email");
+  message = await message.populate("sender", "name email avatar bio");
+  if (message.replyTo) {
+    message = await message.populate({
+      path: "replyTo",
+      populate: { path: "sender", select: "name email avatar" },
+    });
+  }
 
   // Update latest message in Chat
   await Chat.findByIdAndUpdate(chatId, { latestMessage: message._id });
@@ -28,7 +56,11 @@ exports.sendMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
   try {
     const messages = await Message.find({ chat: req.params.chatId })
-      .populate("sender", "name email")
+      .populate("sender", "name email avatar bio")
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name email avatar" },
+      })
       .sort({ createdAt: 1 });
 
     res.json(messages);
