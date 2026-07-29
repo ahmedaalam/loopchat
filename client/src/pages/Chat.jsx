@@ -525,45 +525,48 @@ function showBrowserNotification(senderName, messageContent, chatName) {
   setTimeout(() => notification.close(), 5000);
 }
 
+function SearchIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
 // ─── Reusable tick icon ───────────────────────────────────────────────────────
 function TickIcon({ tickState, size = 9 }) {
-  const SENT = "rgba(255,255,255,0.38)";
-  const DELIVERED = "rgba(255,255,255,0.82)";
-  const READ = "#38bdf8";
-
   const isDouble = tickState !== "sent";
-  const color =
-    tickState === "read" ? READ : tickState === "delivered" ? DELIVERED : SENT;
-  const sw = 2.5;
+  const className = `tick-icon tick-${tickState}`;
 
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        flexShrink: 0,
-        marginLeft: 2,
-      }}
-    >
+    <span className={className}>
       {isDouble ? (
         <svg
           viewBox="0 0 22 11"
           fill="none"
-          width={size * 2}
+          width={size * 1.8}
           height={size}
           style={{ overflow: "visible" }}
         >
           <path
             d="M1 5.5L5.5 10L15 1"
-            stroke={color}
-            strokeWidth={sw}
+            strokeWidth={1.6}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <path
             d="M7 5.5L11.5 10L21 1"
-            stroke={color}
-            strokeWidth={sw}
+            strokeWidth={1.6}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -578,8 +581,7 @@ function TickIcon({ tickState, size = 9 }) {
         >
           <path
             d="M1 5.5L5.5 10L15 1"
-            stroke={color}
-            strokeWidth={sw}
+            strokeWidth={1.6}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -2388,6 +2390,9 @@ function Chat() {
           {/* MIDDLE: Search + Chat list */}
           <div className="sidebar-search">
             <div className="search-input-wrapper">
+              <span className="search-icon-left">
+                <SearchIcon size={16} color="var(--text-3)" />
+              </span>
               <input
                 type="text"
                 className="search-input"

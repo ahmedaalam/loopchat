@@ -453,12 +453,22 @@ body {
   align-items: center;
 }
 
+.search-icon-left {
+  position: absolute;
+  left: 0.75rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--text-3);
+  z-index: 2;
+}
+
 .search-input {
   width: 100%;
   background: var(--surface-4);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.6rem 2rem 0.6rem 0.9rem;
+  padding: 0.6rem 2rem 0.6rem 2.3rem;
   font-family: var(--font);
   color: var(--text-1);
   font-size: 0.88rem;
@@ -831,32 +841,35 @@ body {
 
 /* Single gray — sent to server (recipient offline) */
 .tick-sent svg {
-  width: 13px;
-  height: 10px;
-  stroke-width: 2.8;
+  width: 11px;
+  height: 8px;
+  stroke-width: 1.6;
 }
 .tick-sent svg path {
-  stroke: rgba(255, 255, 255, 0.5);
+  stroke: #626262;
+  stroke-width: 1.6;
 }
 
 /* Double gray — delivered (recipient is online) */
 .tick-delivered svg {
-  width: 20px;
-  height: 10px;
-  stroke-width: 2.5;
+  width: 15px;
+  height: 8px;
+  stroke-width: 1.6;
 }
 .tick-delivered svg path {
   stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.6;
 }
 
 /* Double SKY BLUE — read (recipient opened the chat) */
 .tick-read svg {
-  width: 20px;
-  height: 10px;
-  stroke-width: 2.5;
+  width: 15px;
+  height: 8px;
+  stroke-width: 1.6;
 }
 .tick-read svg path {
   stroke: #38bdf8;
+  stroke-width: 1.6;
   transition: stroke 0.25s ease;
 }
 
@@ -2828,7 +2841,7 @@ html:not([data-theme="dark"]) .message-wrapper.sent .message-info {
 /* ── Ticks inside sent bubble — dark on light blue bg ───────────────────── */
 html:not([data-theme="dark"]) .message-wrapper.sent .tick-sent svg path,
 html:not([data-theme="dark"]) .message-wrapper.sent .tick-delivered svg path {
-  stroke: rgba(10, 25, 41, 0.4);
+  stroke: #626262;
 }
 html:not([data-theme="dark"]) .message-wrapper.sent .tick-read svg path {
   stroke: #0078d4;
