@@ -915,7 +915,6 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   align-items: center;
   flex: 1;
   background: #ffffff;
-
   border-radius: 24px;
   padding: 0.3rem 0.5rem 0.3rem 0.75rem;
   gap: 0.4rem;
@@ -1109,7 +1108,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 /* Group avatar — subtle purple tint */
 .avatar-group {
-  background: #4f46e5 !important;
+  background: #0078d4 !important;
   font-size: 1rem;
 }
 
@@ -3110,6 +3109,27 @@ html:not([data-theme="dark"]) .search-input:focus {
   border-color: #0ea5e9;
 }
 
+html:not([data-theme="dark"]) .avatar-group {
+  background: #cfe8fb !important;
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .context-menu-item {
+  color: #0a0a0a !important;
+}
+html:not([data-theme="dark"]) .context-menu-item:hover {
+  background: #f9f8f8 !important;
+}
+
+html:not([data-theme="dark"]) .context-menu-item.danger {
+  color: #0a0a0a !important;
+}
+
+html:not([data-theme="dark"]) .context-menu-item.danger:hover {
+  background-color: #fde5eb !important;
+  color: #b80531 !important;
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
@@ -3520,7 +3540,7 @@ html[data-theme="dark"] .nav-rail-item.active {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: #25d366;
+  background: #0078d4;
   color: #ffffff;
   font-size: 0.7rem;
   font-weight: 700;

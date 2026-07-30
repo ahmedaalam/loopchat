@@ -3,6 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import LoopChatLogo from "../components/LoopChatLogo";
 import CallModal from "../components/CallModal";
+import { MinusCircle } from "lucide-react";
 
 const ENDPOINT = "http://localhost:5000";
 
@@ -1076,7 +1077,9 @@ function Chat() {
 
       // Clear notifications locally for this chat
       setNotifications((prev) =>
-        prev.filter((n) => (typeof n.chat === "object" ? n.chat?._id : n.chat) !== chatId),
+        prev.filter(
+          (n) => (typeof n.chat === "object" ? n.chat?._id : n.chat) !== chatId,
+        ),
       );
 
       // Update chats list state so latestMessage.readBy contains current user
@@ -1085,7 +1088,12 @@ function Chat() {
           if (c._id === chatId && c.latestMessage) {
             const readBy = c.latestMessage.readBy || [];
             const currentUserId = currentUser.user._id;
-            if (!readBy.some((id) => (typeof id === "object" ? id._id : id) === currentUserId)) {
+            if (
+              !readBy.some(
+                (id) =>
+                  (typeof id === "object" ? id._id : id) === currentUserId,
+              )
+            ) {
               return {
                 ...c,
                 latestMessage: {
@@ -2923,7 +2931,7 @@ function Chat() {
                             fontWeight: "500",
                           }}
                         >
-                          <UsersIcon size={16} color="var(--accent)" />
+                          <UsersIcon size={16} color="#0a0a0a" />
                           <span>Create group</span>
                         </button>
 
@@ -2950,7 +2958,7 @@ function Chat() {
                             fontWeight: "500",
                           }}
                         >
-                          <LogOutIcon size={16} color="#ef4444" />
+                          <LogOutIcon size={16} />
                           <span>Logout</span>
                         </button>
                       </div>
@@ -3235,7 +3243,6 @@ function Chat() {
                     gap: "0.3rem",
                   }}
                 >
-                  <PhoneCallIcon size={14} color="#fff" />
                   <span>+ Call</span>
                 </button>
               </div>
@@ -3770,7 +3777,7 @@ function Chat() {
                             className="context-menu-item"
                             onClick={handleClearChat}
                           >
-                            <TrashIcon size={14} />
+                            <MinusCircle size={14} />
                             <span>Clear Chat</span>
                           </button>
                           <button
