@@ -1337,9 +1337,9 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .btn-create {
-  background: var(--accent);
+  background: #0078d4;
   border: none;
-  color: var(--text-2);
+  color: #ffffff;
   padding: 0.65rem 1.4rem;
   border-radius: var(--radius-md);
   font-family: var(--font);
@@ -1350,7 +1350,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .btn-create:hover {
-  background: #1d4ed8;
+  background: #0066b8;
 }
 .btn-create:disabled {
   opacity: 0.4;
@@ -3130,6 +3130,36 @@ html:not([data-theme="dark"]) .context-menu-item.danger:hover {
   color: #b80531 !important;
 }
 
+html:not([data-theme="dark"]) .logout-btn {
+  background: #ffffff;
+  color: #0a1929;
+  border: 1px solid #e1e1e1;
+}
+
+html:not([data-theme="dark"]) .logout-btn:hover {
+  background-color: #fde5eb !important;
+  color: #b80531 !important;
+}
+
+html:not([data-theme="dark"]) .btn-create {
+  background: #ffffff !important;
+  color: #0a1929 !important;
+  border: 1px solid #e1e1e1 !important;
+}
+
+html:not([data-theme="dark"]) .btn-create:hover {
+  background-color: #cfe8fb !important;
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .call-avatar-circle {
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .btn-toggle {
+  color: #0078d4 !important;
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
@@ -3452,6 +3482,28 @@ html[data-theme="dark"] .quoted-message-box {
 
 .btn-block-contact.blocked:hover {
   background: #dc2626;
+}
+
+.logout-btn {
+  width: 100%;
+  margin-top: 1.2rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #0f0f0f;
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.logout-btn:hover {
+  background: #321818;
+  color: var(--danger);
 }
 
 /* ==========================================================================

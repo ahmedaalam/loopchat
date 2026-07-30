@@ -2931,7 +2931,7 @@ function Chat() {
                             fontWeight: "500",
                           }}
                         >
-                          <UsersIcon size={16} color="#0a0a0a" />
+                          <UsersIcon size={16} />
                           <span>Create group</span>
                         </button>
 
@@ -3585,21 +3585,11 @@ function Chat() {
                 </div>
 
                 <button
+                  className="logout-btn"
                   type="button"
                   onClick={handleLogout}
-                  style={{
-                    width: "100%",
-                    marginTop: "1.2rem",
-                    padding: "0.75rem",
-                    borderRadius: "10px",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    color: "#ef4444",
-                    border: "1px solid rgba(239, 68, 68, 0.25)",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "var(--transition)",
-                  }}
                 >
+                  <LogOutIcon />
                   Logout
                 </button>
               </div>
