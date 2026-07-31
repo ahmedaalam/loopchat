@@ -2940,7 +2940,10 @@ function Chat() {
               <div className="sidebar-search">
                 <div className="search-input-wrapper">
                   <span className="search-icon-left">
-                    <SearchIcon size={16} color="#a5a5a5" />
+                    <SearchIcon
+                      size={16}
+                      color={isDark ? "#a5a5a5" : "#626262"}
+                    />
                   </span>
                   <input
                     type="text"
@@ -3185,7 +3188,7 @@ function Chat() {
                             fontSize: "0.9rem",
                           }}
                         >
-                          No active chats. Search for a user to start chatting!
+                          No active chats.
                         </div>
                       )}
                     </ul>
@@ -3218,7 +3221,10 @@ function Chat() {
               <div className="sidebar-search">
                 <div className="search-input-wrapper">
                   <span className="search-icon-left">
-                    <SearchIcon size={16} color="var(--text-3)" />
+                    <SearchIcon
+                      size={16}
+                      color={isDark ? "#a5a5a5" : "#626262"}
+                    />
                   </span>
                   <input
                     type="text"
@@ -3368,7 +3374,10 @@ function Chat() {
               <div className="sidebar-search">
                 <div className="search-input-wrapper">
                   <span className="search-icon-left">
-                    <SearchIcon size={16} color="var(--text-3)" />
+                    <SearchIcon
+                      size={16}
+                      color={isDark ? "#a5a5a5" : "#626262"}
+                    />
                   </span>
                   <input
                     type="text"
@@ -4362,7 +4371,14 @@ function Chat() {
               </div>
             </>
           ) : (
-            <div className="chat-placeholder">
+            <div
+              className="chat-placeholder"
+              style={
+                isDark
+                  ? { backgroundColor: "#000000" }
+                  : { backgroundColor: "#F7F5F3" }
+              }
+            >
               <div className="placeholder-icon">
                 <svg
                   width="52"

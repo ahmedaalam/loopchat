@@ -482,9 +482,9 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 .search-input {
   width: 100%;
-  background: var(--surface-4);
-  border: 2px solid var(--border);
-  border-radius: 10px;
+  background: #2e2f2f;
+  border: 2px solid #2e2f2f;
+  border-radius: 30px;
   padding: 0.6rem 2rem 0.6rem 2.3rem;
   font-family: var(--font);
   color: var(--text-1);
@@ -567,11 +567,11 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 [data-theme="dark"] .sidebar-item:hover {
-  background: #202c33;
+  background: #2e2f2f;
 }
 
 [data-theme="dark"] .sidebar-item.active {
-  background: #2a3942;
+  background: #2e2f2f;
 }
 
 [data-theme="dark"] .sidebar-item.active .item-name {
@@ -2738,7 +2738,6 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 .call-header-btn:hover {
   background: var(--surface-3);
-  color: var(--accent-text);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2750,7 +2749,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   gap: 0.9rem;
   padding: 0.6rem 0.75rem;
   min-width: 240px;
-  background: rgba(0, 0, 0, 0.28);
+  background: #0f5ea6;
   border-radius: 4px;
 }
 
@@ -2766,7 +2765,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .missed-call-icon-sender {
-  background: rgba(0, 0, 0, 0.58);
+  background-color: #242626;
 }
 
 .missed-call-details {
@@ -2989,7 +2988,7 @@ html:not([data-theme="dark"]) .message-wrapper.sent .message-bubble {
 
 /* ── Timestamp in received bubble ───────────────────────────────────────── */
 html:not([data-theme="dark"]) .message-wrapper.received .message-info {
-  color: #92929d;
+  color: #6c6c6c;
 }
 
 /* ── Timestamp in sent bubble (light mode) ──────────────────────────────── */
@@ -3013,6 +3012,14 @@ html:not([data-theme="dark"]) .item-msg .tick-delivered svg path {
 }
 html:not([data-theme="dark"]) .item-msg .tick-read svg path {
   stroke: #0078d4;
+}
+
+html:not([data-theme="dark"]) .search-input::placeholder {
+  color: #626262;
+}
+
+html:not([data-theme="dark"]) .search-input {
+  color: #626262;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3179,6 +3186,51 @@ html:not([data-theme="dark"]) .other-quote {
   background-color: #f6f5f4 !important;
 }
 
+html:not([data-theme="dark"]) .other-quote:hover {
+  background-color: #e4e4e7 !important;
+}
+
+html:not([data-theme="dark"]) .chat-header-menu-btn {
+  color: #0a0a0a !important;
+}
+
+html:not([data-theme="dark"]) .chat-header-menu-btn:hover {
+  background-color: #f9f8f8 !important;
+}
+
+html:not([data-theme="dark"]) .call-header-btn {
+  color: #0a0a0a !important;
+}
+
+html:not([data-theme="dark"]) .call-header-btn:hover {
+  background-color: #f9f8f8 !important;
+}
+
+html:not([data-theme="dark"]) .sidebar-menu-dots-btn {
+  color: #0a0a0a !important;
+}
+
+html:not([data-theme="dark"]) .sidebar-menu-dots-btn:hover {
+  background-color: #f9f8f8 !important;
+}
+
+html:not([data-theme="dark"]) .chat-user-status {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .chat-input::placeholder {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .item-meta {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .date-separator-label {
+  background-color: #ffffff !important;
+  color: #626262 !important;
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
@@ -3214,7 +3266,7 @@ html:not([data-theme="dark"]) .other-quote {
 }
 
 .my-quote {
-  background-color: #005799;
+  background-color: #0f5ea6;
   border-left: 3px solid #66d1ff;
 }
 
