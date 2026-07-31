@@ -2915,21 +2915,6 @@ function Chat() {
                             setShowSidebarHeaderMenu(false);
                             setShowGroupModal(true);
                           }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.6rem",
-                            padding: "0.6rem 0.8rem",
-                            width: "100%",
-                            textAlign: "left",
-                            background: "transparent",
-                            border: "none",
-                            color: "var(--text-1)",
-                            cursor: "pointer",
-                            borderRadius: "6px",
-                            fontSize: "0.88rem",
-                            fontWeight: "500",
-                          }}
                         >
                           <UsersIcon size={16} />
                           <span>Create group</span>
@@ -2941,21 +2926,6 @@ function Chat() {
                           onClick={() => {
                             setShowSidebarHeaderMenu(false);
                             handleLogout();
-                          }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.6rem",
-                            padding: "0.6rem 0.8rem",
-                            width: "100%",
-                            textAlign: "left",
-                            background: "transparent",
-                            border: "none",
-                            color: "#ef4444",
-                            cursor: "pointer",
-                            borderRadius: "6px",
-                            fontSize: "0.88rem",
-                            fontWeight: "500",
                           }}
                         >
                           <LogOutIcon size={16} />

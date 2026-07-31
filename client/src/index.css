@@ -1182,10 +1182,11 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .context-menu-item.danger {
-  color: var(--danger);
+  color: var(--text-1);
 }
 
 .context-menu-item.danger:hover {
+  color: var(--danger);
   background: rgba(239, 68, 68, 0.1);
 }
 
@@ -2205,10 +2206,6 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   background: var(--surface-3);
 }
 
-.context-menu-item.danger {
-  color: #ef4444;
-}
-
 .context-menu-item.danger:hover {
   background: rgba(239, 68, 68, 0.15);
 }
@@ -3181,8 +3178,8 @@ html:not([data-theme="dark"]) .btn-toggle {
 
 /* Quoted Reply Box Inside Message Bubble */
 .quoted-message-box {
-  background: rgba(0, 0, 0, 0.06);
-  border-left: 4px solid var(--accent);
+  background-color: #005799;
+  border-left: 4px solid #66d1ff;
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
   margin-bottom: 0.4rem;
@@ -3191,23 +3188,19 @@ html:not([data-theme="dark"]) .btn-toggle {
   transition: var(--transition);
 }
 
-html[data-theme="dark"] .quoted-message-box {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .quoted-message-box:hover {
   opacity: 0.88;
 }
 
 .quoted-sender {
   font-weight: 600;
-  color: var(--accent);
+  color: #66d1ff;
   font-size: 0.76rem;
   margin-bottom: 0.15rem;
 }
 
 .quoted-text {
-  color: var(--text-2);
+  color: #aad2f1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
