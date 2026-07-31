@@ -2940,7 +2940,7 @@ function Chat() {
               <div className="sidebar-search">
                 <div className="search-input-wrapper">
                   <span className="search-icon-left">
-                    <SearchIcon size={16} color="var(--text-3)" />
+                    <SearchIcon size={16} color="#a5a5a5" />
                   </span>
                   <input
                     type="text"
@@ -3070,9 +3070,7 @@ function Chat() {
                                   className="item-meta"
                                   style={{
                                     color:
-                                      unreadCount > 0
-                                        ? "#0078D4"
-                                        : "var(--text-3)",
+                                      unreadCount > 0 ? "#0078D4" : "#a5a5a5",
                                     fontWeight: unreadCount > 0 ? "600" : "400",
                                   }}
                                 >
@@ -3888,7 +3886,7 @@ function Chat() {
                           {/* Render Quoted Reply Box if replying to a message */}
                           {msg.replyTo && (
                             <div
-                              className="quoted-message-box"
+                              className={`quoted-message-box ${isSentByMe ? "my-quote" : "other-quote"}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 scrollToMessage(msg.replyTo._id || msg.replyTo);
@@ -3903,7 +3901,10 @@ function Chat() {
                                     : "User"
                                   : "Original message"}
                               </div>
-                              <div className="quoted-text">
+
+                              <div
+                                className={`quoted-text ${isSentByMe ? "my-quoted-text" : "other-quoted-text"}`}
+                              >
                                 {typeof msg.replyTo === "object"
                                   ? msg.replyTo.content ||
                                     (msg.replyTo.file
@@ -3911,19 +3912,6 @@ function Chat() {
                                       : "Message")
                                   : "Quoted message"}
                               </div>
-                            </div>
-                          )}
-
-                          {selectedChat.isGroupChat && !isSentByMe && (
-                            <div
-                              style={{
-                                fontSize: "0.72rem",
-                                color: "var(--accent-text)",
-                                fontWeight: 600,
-                                marginBottom: "0.25rem",
-                              }}
-                            >
-                              {senderName}
                             </div>
                           )}
 
