@@ -3115,11 +3115,7 @@ function Chat() {
                                 <span
                                   className="item-msg"
                                   style={{
-                                    fontWeight: unreadCount > 0 ? "600" : "400",
-                                    color:
-                                      unreadCount > 0
-                                        ? "var(--text-1)"
-                                        : "var(--text-2)",
+                                    color: isDark ? "#a5a5a5" : "#626262",
                                   }}
                                 >
                                   {chatNotifications.length > 0 ? (
@@ -4787,7 +4783,10 @@ function Chat() {
                                 });
                               }}
                             >
-                              <PhoneCallIcon size={16} color="#ffffff" />
+                              <PhoneCallIcon
+                                size={16}
+                                color={isDark ? "#fff" : "#626262"}
+                              />
                             </button>
                             <button
                               type="button"
@@ -4802,7 +4801,10 @@ function Chat() {
                                 });
                               }}
                             >
-                              <VideoIcon size={16} color="#ffffff" />
+                              <VideoIcon
+                                size={16}
+                                color={isDark ? "#fff" : "#626262"}
+                              />
                             </button>
                           </div>
                         </div>

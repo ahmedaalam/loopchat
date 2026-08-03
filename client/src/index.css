@@ -635,7 +635,6 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 .item-msg {
   font-size: 0.8rem;
-  color: var(--text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3288,6 +3287,17 @@ html:not([data-theme="dark"]) .date-separator-label {
   color: #626262 !important;
 }
 
+html:not([data-theme="dark"]) .call-quick-btn {
+  background-color: #f9f8f8 !important;
+}
+
+html:not([data-theme="dark"]) .contact-email {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .contact-detail-title {
+  color: #626262 !important;
+}
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
