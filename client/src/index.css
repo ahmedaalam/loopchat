@@ -352,6 +352,23 @@ body {
 }
 
 /* Profile footer — pinned to bottom of sidebar */
+.sidebar-menu-dots-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #e9edef;
+  cursor: pointer;
+}
+
+.sidebar-menu-dots-btn:hover {
+  background: #2e2f2f;
+}
+
 .sidebar-profile-footer {
   display: flex;
   align-items: center;
@@ -1182,7 +1199,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .context-menu-item:hover {
-  background: var(--surface-3);
+  background: #a5a5a5;
 }
 
 .context-menu-item.danger {
@@ -1251,8 +1268,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .close-modal-btn:hover {
-  background: var(--surface-4);
-  color: var(--text-1);
+  background: #2e2f2f;
 }
 
 .modal-title {
@@ -2272,11 +2288,12 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   align-items: center;
   justify-content: center;
   transition: var(--transition);
+  height: 42px;
+  width: 42px;
 }
 
 .chat-header-menu-btn:hover {
-  background: var(--surface-3);
-  color: var(--text-1);
+  background: #2e2f2f;
 }
 
 .chat-header-dropdown-menu {
@@ -2772,10 +2789,12 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   align-items: center;
   justify-content: center;
   transition: var(--transition);
+  height: 42px;
+  width: 42px;
 }
 
 .call-header-btn:hover {
-  background: var(--surface-3);
+  background: #2e2f2f;
 }
 
 /* ═══════════════════════════════════════════════════════

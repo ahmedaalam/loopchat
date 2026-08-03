@@ -2907,19 +2907,8 @@ function Chat() {
                       setShowSidebarHeaderMenu((prev) => !prev);
                     }}
                     title="Menu"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--text-2)",
-                      cursor: "pointer",
-                      padding: "0.35rem",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
                   >
-                    <MoreVerticalIcon size={20} />
+                    <MoreVerticalIcon size={22} />
                   </button>
 
                   {showSidebarHeaderMenu && (
@@ -3731,7 +3720,7 @@ function Chat() {
                         onClick={() => initiateCall(false)}
                         title="Start Voice Call"
                       >
-                        <PhoneCallIcon size={18} />
+                        <PhoneCallIcon size={22} />
                       </button>
 
                       <button
@@ -3740,7 +3729,7 @@ function Chat() {
                         onClick={() => initiateCall(true)}
                         title="Start Video Call"
                       >
-                        <VideoIcon size={18} />
+                        <VideoIcon size={22} />
                       </button>
                     </>
                   )}
@@ -3765,7 +3754,7 @@ function Chat() {
                       }}
                       title="More options"
                     >
-                      <MoreVerticalIcon size={18} />
+                      <MoreVerticalIcon size={22} />
                     </button>
 
                     {showChatHeaderMenu && (
