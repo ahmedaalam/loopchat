@@ -1218,6 +1218,43 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   animation: fadeUp 0.22s var(--ease);
 }
 
+/* Modal header row (title + close button) */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.modal-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+  margin: 0;
+}
+
+/* Close / Cross button used in modals */
+.close-modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.close-modal-btn:hover {
+  background: var(--surface-4);
+  color: var(--text-1);
+}
+
 .modal-title {
   font-size: 1.15rem;
   font-weight: 700;
@@ -3508,7 +3545,7 @@ html:not([data-theme="dark"]) .date-separator-label {
 
 .contact-email {
   font-size: 0.85rem;
-  color: var(--text-3);
+  color: #a5a5a5;
   margin-bottom: 1.25rem;
 }
 
@@ -3525,7 +3562,7 @@ html:not([data-theme="dark"]) .date-separator-label {
 .contact-detail-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-3);
+  color: #a5a5a5;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: block;
@@ -3546,9 +3583,9 @@ html:not([data-theme="dark"]) .date-separator-label {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 10px;
-  border: 1px solid #ef4444;
+  border: 1px solid #fa99a4;
   background: transparent;
-  color: #ef4444;
+  color: #fa99a4;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

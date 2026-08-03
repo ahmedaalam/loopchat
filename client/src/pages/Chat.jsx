@@ -2089,7 +2089,10 @@ function Chat() {
       setIsRecipientBlocked((prev) => !prev);
       // Also keep contactInfoData in sync if the modal has been opened
       if (contactInfoData?._id === recipient._id) {
-        setContactInfoData((prev) => ({ ...prev, isBlocked: !isRecipientBlocked }));
+        setContactInfoData((prev) => ({
+          ...prev,
+          isBlocked: !isRecipientBlocked,
+        }));
       }
     } catch (err) {
       console.error("Error blocking/unblocking user from header:", err);
@@ -4479,7 +4482,7 @@ function Chat() {
                 className="close-modal-btn"
                 onClick={() => setShowProfileModal(false)}
               >
-                <CrossIcon size={14} />
+                <CrossIcon size={20} />
               </button>
             </div>
 
@@ -4574,7 +4577,7 @@ function Chat() {
                 onClick={() => setShowContactInfoModal(false)}
                 style={{ marginLeft: "auto" }}
               >
-                <CrossIcon size={14} />
+                <CrossIcon size={24} />
               </button>
             </div>
 
@@ -4639,7 +4642,7 @@ function Chat() {
                 className="close-modal-btn"
                 onClick={() => setShowNewCallModal(false)}
               >
-                <CrossIcon size={14} />
+                <CrossIcon size={24} />
               </button>
             </div>
 
@@ -4648,7 +4651,7 @@ function Chat() {
               style={{ marginBottom: "1rem" }}
             >
               <span className="search-icon-left">
-                <SearchIcon size={16} color="var(--text-3)" />
+                <SearchIcon size={16} color="#a5a5a5" />
               </span>
               <input
                 type="text"
