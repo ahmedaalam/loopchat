@@ -1131,6 +1131,15 @@ function Chat() {
         prev.filter((n) => n.chat !== selectedChat._id),
       );
       markChatAsRead(selectedChat._id);
+      // Reset block state; will be updated when user opens contact info
+      if (!selectedChat.isGroupChat) {
+        const recipient = selectedChat.users?.find(
+          (u) => (typeof u === "object" ? u._id : u) !== currentUser?.user?._id,
+        );
+        setIsRecipientBlocked(recipient?.isBlocked ?? false);
+      } else {
+        setIsRecipientBlocked(false);
+      }
     }
   }, [selectedChat, markChatAsRead]);
 
@@ -2057,6 +2066,36 @@ function Chat() {
       console.error("Error blocking/unblocking user:", err);
     } finally {
       setIsBlockingActionLoading(false);
+    }
+  };
+
+  // Block/unblock recipient directly from chat header 3-dot menu
+  const [isRecipientBlocked, setIsRecipientBlocked] = useState(false);
+
+  const handleBlockFromChatHeader = async () => {
+    if (!selectedChat || selectedChat.isGroupChat || !currentUser) return;
+    const recipient = getRecipient(selectedChat.users);
+    if (!recipient) return;
+    setIsBlockingActionLoading(true);
+    try {
+      const endpoint = isRecipientBlocked
+        ? `http://localhost:5000/api/users/unblock/${recipient._id}`
+        : `http://localhost:5000/api/users/block/${recipient._id}`;
+      await axios.post(
+        endpoint,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+      setIsRecipientBlocked((prev) => !prev);
+      // Also keep contactInfoData in sync if the modal has been opened
+      if (contactInfoData?._id === recipient._id) {
+        setContactInfoData((prev) => ({ ...prev, isBlocked: !isRecipientBlocked }));
+      }
+    } catch (err) {
+      console.error("Error blocking/unblocking user from header:", err);
+    } finally {
+      setIsBlockingActionLoading(false);
+      setShowChatHeaderMenu(false);
     }
   };
 
@@ -3747,6 +3786,23 @@ function Chat() {
                             <MinusCircle size={14} />
                             <span>Clear Chat</span>
                           </button>
+                          {!selectedChat.isGroupChat && (
+                            <button
+                              type="button"
+                              className="context-menu-item danger"
+                              onClick={handleBlockFromChatHeader}
+                              disabled={isBlockingActionLoading}
+                            >
+                              <BlockIcon size={14} />
+                              <span>
+                                {isBlockingActionLoading
+                                  ? "Please wait..."
+                                  : isRecipientBlocked
+                                    ? "Unblock Contact"
+                                    : "Block Contact"}
+                              </span>
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="context-menu-item danger"
@@ -4597,7 +4653,7 @@ function Chat() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search contact to call..."
+                placeholder="Search contact to call"
                 value={newCallSearch}
                 onChange={async (e) => {
                   const q = e.target.value;
