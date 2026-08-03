@@ -4423,7 +4423,7 @@ function Chat() {
               className="chat-placeholder"
               style={
                 isDark
-                  ? { backgroundColor: "#000000" }
+                  ? { backgroundColor: "#0F0F0F" }
                   : { backgroundColor: "#F7F5F3" }
               }
             >
@@ -4787,7 +4787,7 @@ function Chat() {
                                 });
                               }}
                             >
-                              <PhoneCallIcon size={16} color="var(--accent)" />
+                              <PhoneCallIcon size={16} color="#ffffff" />
                             </button>
                             <button
                               type="button"
@@ -4802,7 +4802,7 @@ function Chat() {
                                 });
                               }}
                             >
-                              <VideoIcon size={16} color="var(--accent)" />
+                              <VideoIcon size={16} color="#ffffff" />
                             </button>
                           </div>
                         </div>

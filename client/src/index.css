@@ -620,7 +620,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 .item-meta {
   font-size: 0.7rem;
-  color: var(--text-3);
+  color: #a5a5a5;
   flex-shrink: 0;
   margin-left: 0.5rem;
 }
@@ -3787,6 +3787,6 @@ html[data-theme="dark"] .nav-rail-item.active {
 }
 
 .call-quick-btn:hover {
-  background: rgba(14, 165, 233, 0.1);
+  background: #2e2f2f;
   transform: scale(1.08);
 }
