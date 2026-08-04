@@ -1,4 +1,4 @@
-﻿const FriendRequest = require("../models/FriendRequest");
+const FriendRequest = require("../models/FriendRequest");
 const User = require("../models/User");
 
 // ─── Send a friend / contact request ─────────────────────────────────────────
@@ -112,12 +112,12 @@ exports.getMyRequests = async (req, res) => {
     const incoming = await FriendRequest.find({
       receiver: req.user,
       status: "pending",
-    }).populate("sender", "name email avatar");
+    }).populate("sender", "name username email avatar bio");
 
     const outgoing = await FriendRequest.find({
       sender: req.user,
       status: "pending",
-    }).populate("receiver", "name email avatar");
+    }).populate("receiver", "name username email avatar bio");
 
     res.json({ incoming, outgoing });
   } catch (err) {
@@ -132,8 +132,8 @@ exports.getFriends = async (req, res) => {
       $or: [{ sender: req.user }, { receiver: req.user }],
       status: "accepted",
     })
-      .populate("sender", "name email avatar")
-      .populate("receiver", "name email avatar");
+      .populate("sender", "name username email avatar bio")
+      .populate("receiver", "name username email avatar bio");
 
     const friends = requests.map((r) =>
       r.sender._id.toString() === req.user.toString() ? r.receiver : r.sender

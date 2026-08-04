@@ -118,6 +118,26 @@ function UsersIcon({ size = 16, color = "currentColor" }) {
   );
 }
 
+function ContactsTabIcon({ size = 22, color = "currentColor" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
 function CrownIcon({ size = 12, color = "#f59e0b" }) {
   return (
     <svg
@@ -271,7 +291,16 @@ function TrashIcon({ size = 13, color = "currentColor" }) {
 
 function BellIcon({ size = 18, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
@@ -280,7 +309,16 @@ function BellIcon({ size = 18, color = "currentColor" }) {
 
 function UserPlusIcon({ size = 14, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="8.5" cy="7" r="4" />
       <line x1="20" y1="8" x2="20" y2="14" />
@@ -291,13 +329,21 @@ function UserPlusIcon({ size = 14, color = "currentColor" }) {
 
 function CheckCircleIcon({ size = 14, color = "currentColor" }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
       <polyline points="22 4 12 14.01 9 11.01" />
     </svg>
   );
 }
-
 
 function ChevronDownIcon({ size = 14, color = "currentColor" }) {
   return (
@@ -1026,7 +1072,8 @@ function Chat() {
   const [editAvatar, setEditAvatar] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUsernameError, setProfileUsernameError] = useState("");
-  const [isProfileUsernameFocused, setIsProfileUsernameFocused] = useState(false);
+  const [isProfileUsernameFocused, setIsProfileUsernameFocused] =
+    useState(false);
 
   // Contact Info Modal & Blocking State
   const [showContactInfoModal, setShowContactInfoModal] = useState(false);
@@ -1036,6 +1083,12 @@ function Chat() {
   // ─── Friend / Contact Request State ──────────────────────────────────────
   const [friendStatuses, setFriendStatuses] = useState({}); // { userId: { status, requestId, isSender } }
   const [incomingRequests, setIncomingRequests] = useState([]);
+  const [acceptedContacts, setAcceptedContacts] = useState([]);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
+
+  // ─── Context Menus (double-click) ─────────────────────────────────────────
+  const [chatCtxMenu, setChatCtxMenu] = useState(null); // { chatId, x, y }
+  const [friendCtxMenu, setFriendCtxMenu] = useState(null); // { contactId, x, y }
   const [showFriendRequestsPanel, setShowFriendRequestsPanel] = useState(false);
   const [friendRequestToast, setFriendRequestToast] = useState(null); // { message }
 
@@ -1208,9 +1261,12 @@ function Chat() {
     return () => socketInstance.disconnect();
   }, [currentUser]);
 
-  // Fetch pending friend requests when user logs in
+  // Fetch pending friend requests & accepted contacts when user logs in
   useEffect(() => {
-    if (currentUser) fetchFriendRequests();
+    if (currentUser) {
+      fetchFriendRequests();
+      fetchAcceptedContacts();
+    }
   }, [currentUser]);
 
   // Helper: Get recipient user in DM chat
@@ -1465,7 +1521,9 @@ function Chat() {
           isSender: false,
         },
       }));
-      setFriendRequestToast({ message: `${request.sender?.name} sent you a contact request!` });
+      setFriendRequestToast({
+        message: `${request.sender?.name} sent you a contact request!`,
+      });
       setTimeout(() => setFriendRequestToast(null), 3500);
     };
 
@@ -1474,11 +1532,18 @@ function Chat() {
       if (friendId) {
         setFriendStatuses((prev) => ({
           ...prev,
-          [friendId]: { status: "accepted", requestId: request._id, isSender: true },
+          [friendId]: {
+            status: "accepted",
+            requestId: request._id,
+            isSender: true,
+          },
         }));
       }
-      setFriendRequestToast({ message: `${request.receiver?.name} accepted your contact request!` });
+      setFriendRequestToast({
+        message: `${request.receiver?.name} accepted your contact request!`,
+      });
       setTimeout(() => setFriendRequestToast(null), 3500);
+      fetchAcceptedContacts();
     };
 
     const handleFriendRequestDeclinedEvt = ({ requestId }) => {
@@ -1855,11 +1920,56 @@ function Chat() {
     try {
       const { data } = await axios.get(
         "http://localhost:5000/api/friends/requests",
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setIncomingRequests(data.incoming || []);
     } catch (err) {
       console.error("Error fetching friend requests:", err);
+    }
+  };
+
+  const fetchAcceptedContacts = async () => {
+    if (!currentUser) return;
+    try {
+      const { data } = await axios.get("http://localhost:5000/api/friends", {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      setAcceptedContacts(data || []);
+    } catch (err) {
+      console.error("Error fetching accepted contacts:", err);
+    }
+  };
+
+  const handleRemoveContact = async (contactId) => {
+    if (!currentUser || !contactId) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/friends/${contactId}`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      setAcceptedContacts((prev) => prev.filter((c) => c._id !== contactId));
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [contactId]: { status: "none" },
+      }));
+      // Close any existing 1-on-1 chat with this person in the sidebar
+      const removedChat = chats.find(
+        (c) =>
+          !c.isGroupChat &&
+          c.users.some(
+            (u) => (typeof u === "object" ? u._id : u) === contactId,
+          ),
+      );
+      if (removedChat) {
+        setChats((prev) => prev.filter((c) => c._id !== removedChat._id));
+        if (selectedChat?._id === removedChat._id) {
+          setSelectedChat(null);
+          setMessages([]);
+        }
+      }
+      setFriendCtxMenu(null);
+      showToast("Friend removed.");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to remove friend.");
     }
   };
 
@@ -1868,7 +1978,7 @@ function Chat() {
     try {
       const { data } = await axios.get(
         `http://localhost:5000/api/friends/status/${userId}`,
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({ ...prev, [userId]: data }));
     } catch (err) {
@@ -1882,13 +1992,16 @@ function Chat() {
       const { data } = await axios.post(
         `http://localhost:5000/api/friends/request/${userId}`,
         {},
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({
         ...prev,
         [userId]: { status: "pending", requestId: data._id, isSender: true },
       }));
-      socket?.emit("friend_request_sent", { receiverId: userId, request: data });
+      socket?.emit("friend_request_sent", {
+        receiverId: userId,
+        request: data,
+      });
       showToast("Contact request sent!");
     } catch (err) {
       showToast(err.response?.data?.message || "Failed to send request.");
@@ -1901,7 +2014,7 @@ function Chat() {
       const { data } = await axios.post(
         `http://localhost:5000/api/friends/accept/${requestId}`,
         {},
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({
         ...prev,
@@ -1910,6 +2023,7 @@ function Chat() {
       setIncomingRequests((prev) => prev.filter((r) => r._id !== requestId));
       socket?.emit("friend_request_accepted", { senderId, request: data });
       showToast("Contact request accepted!");
+      fetchAcceptedContacts();
     } catch (err) {
       showToast(err.response?.data?.message || "Failed to accept request.");
     }
@@ -1921,7 +2035,7 @@ function Chat() {
       await axios.post(
         `http://localhost:5000/api/friends/decline/${requestId}`,
         {},
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({
         ...prev,
@@ -1939,7 +2053,7 @@ function Chat() {
     try {
       await axios.delete(
         `http://localhost:5000/api/friends/cancel/${requestId}`,
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({
         ...prev,
@@ -1962,9 +2076,7 @@ function Chat() {
     const existing = chats.find(
       (c) =>
         !c.isGroupChat &&
-        c.users.some(
-          (u) => (typeof u === "object" ? u._id : u) === userId
-        )
+        c.users.some((u) => (typeof u === "object" ? u._id : u) === userId),
     );
 
     if (existing) {
@@ -1978,7 +2090,7 @@ function Chat() {
       const { data } = await axios.post(
         "http://localhost:5000/api/chat",
         { userId },
-        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
 
       if (!chats.some((c) => c._id === data._id)) {
@@ -1993,6 +2105,66 @@ function Chat() {
         "You must be connected with this user before messaging them.";
       showToast(msg);
     }
+  };
+
+  // ─── Chat context-menu actions (double-click on chat list item) ────────────
+  const openChatCtxMenu = (e, chatId) => {
+    e.preventDefault();
+    setChatCtxMenu({ chatId, x: e.clientX, y: e.clientY });
+  };
+
+  const handleDeleteChatById = async (chatId) => {
+    if (!currentUser || !chatId) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/chat/${chatId}`, {
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (selectedChat?._id === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setChatCtxMenu(null);
+      showToast("Chat deleted.");
+    } catch (err) {
+      // If endpoint doesn't exist yet, just remove from local state
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (selectedChat?._id === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setChatCtxMenu(null);
+      showToast("Chat removed.");
+    }
+  };
+
+  const handleClearChatById = async (chatId) => {
+    if (!currentUser || !chatId) return;
+    try {
+      await axios.put(
+        `http://localhost:5000/api/chat/${chatId}/clear`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        },
+      );
+      if (selectedChat?._id === chatId) setMessages([]);
+      // Clear latestMessage in sidebar
+      setChats((prev) =>
+        prev.map((c) => (c._id === chatId ? { ...c, latestMessage: null } : c)),
+      );
+      setChatCtxMenu(null);
+      showToast("Chat cleared.");
+    } catch (err) {
+      setChatCtxMenu(null);
+      showToast(err.response?.data?.message || "Failed to clear chat.");
+    }
+  };
+
+  // ─── Friend context-menu (double-click on friend list item) ────────────────
+  const openFriendCtxMenu = (e, contactId) => {
+    e.preventDefault();
+    setFriendCtxMenu({ contactId, x: e.clientX, y: e.clientY });
   };
 
   // Fetch messages
@@ -2227,7 +2399,9 @@ function Chat() {
     // Validate username format
     const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
     if (editUsername && !USERNAME_REGEX.test(editUsername.toLowerCase())) {
-      setProfileUsernameError("Username must be 3-20 characters: letters, numbers, _ or .");
+      setProfileUsernameError(
+        "Username must be 3-20 characters: letters, numbers, _ or .",
+      );
       return;
     }
 
@@ -2236,7 +2410,12 @@ function Chat() {
     try {
       const { data } = await axios.put(
         "http://localhost:5000/api/users/profile",
-        { name: editName, username: editUsername.toLowerCase() || undefined, bio: editBio, avatar: editAvatar },
+        {
+          name: editName,
+          username: editUsername.toLowerCase() || undefined,
+          bio: editBio,
+          avatar: editAvatar,
+        },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       const updatedUser = { ...currentUser, user: data };
@@ -3078,6 +3257,20 @@ function Chat() {
 
             <button
               type="button"
+              className={`nav-rail-item ${activeNavTab === "contacts" ? "active" : ""}`}
+              onClick={() => setActiveNavTab("contacts")}
+              title="Friends"
+            >
+              <ContactsTabIcon size={22} />
+              {incomingRequests.length > 0 && (
+                <span className="nav-rail-badge">
+                  {incomingRequests.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               className={`nav-rail-item ${activeNavTab === "calls" ? "active" : ""}`}
               onClick={() => setActiveNavTab("calls")}
               title="Calls History"
@@ -3148,7 +3341,9 @@ function Chat() {
                   >
                     <BellIcon size={20} />
                     {incomingRequests.length > 0 && (
-                      <span className="friend-req-badge">{incomingRequests.length}</span>
+                      <span className="friend-req-badge">
+                        {incomingRequests.length}
+                      </span>
                     )}
                   </button>
 
@@ -3212,7 +3407,7 @@ function Chat() {
                                     onClick={() =>
                                       handleAcceptFriendRequest(
                                         req._id,
-                                        req.sender._id
+                                        req.sender._id,
                                       )
                                     }
                                   >
@@ -3224,7 +3419,7 @@ function Chat() {
                                     onClick={() =>
                                       handleDeclineFriendRequest(
                                         req._id,
-                                        req.sender._id
+                                        req.sender._id,
                                       )
                                     }
                                   >
@@ -3344,11 +3539,14 @@ function Chat() {
                           (c) =>
                             !c.isGroupChat &&
                             c.users.some(
-                              (u) => (typeof u === "object" ? u._id : u) === user._id
-                            )
+                              (u) =>
+                                (typeof u === "object" ? u._id : u) ===
+                                user._id,
+                            ),
                         );
                         const st = friendStatuses[user._id];
-                        const isConnected = !!existingChat || st?.status === "accepted";
+                        const isConnected =
+                          !!existingChat || st?.status === "accepted";
                         const isPending = st?.status === "pending";
 
                         return (
@@ -3361,7 +3559,9 @@ function Chat() {
                               onClick={() => {
                                 if (isConnected) handleSelectUser(user._id);
                               }}
-                              style={{ cursor: isConnected ? "pointer" : "default" }}
+                              style={{
+                                cursor: isConnected ? "pointer" : "default",
+                              }}
                             >
                               {renderUserAvatar(user, 40)}
                             </div>
@@ -3370,7 +3570,9 @@ function Chat() {
                               onClick={() => {
                                 if (isConnected) handleSelectUser(user._id);
                               }}
-                              style={{ cursor: isConnected ? "pointer" : "default" }}
+                              style={{
+                                cursor: isConnected ? "pointer" : "default",
+                              }}
                             >
                               <div className="item-name">{user.name}</div>
                               {user.username && (
@@ -3395,13 +3597,18 @@ function Chat() {
                               ) : isPending ? (
                                 st.isSender ? (
                                   <div className="friend-pending-group">
-                                    <span className="friend-badge-pending">Pending</span>
+                                    <span className="friend-badge-pending">
+                                      Pending
+                                    </span>
                                     <button
                                       type="button"
                                       className="friend-btn-cancel-sm"
                                       title="Cancel Request"
                                       onClick={() =>
-                                        handleCancelFriendRequest(st.requestId, user._id)
+                                        handleCancelFriendRequest(
+                                          st.requestId,
+                                          user._id,
+                                        )
                                       }
                                     >
                                       ✕
@@ -3413,7 +3620,10 @@ function Chat() {
                                       type="button"
                                       className="friend-btn friend-btn-accept"
                                       onClick={() =>
-                                        handleAcceptFriendRequest(st.requestId, user._id)
+                                        handleAcceptFriendRequest(
+                                          st.requestId,
+                                          user._id,
+                                        )
                                       }
                                     >
                                       Accept
@@ -3422,7 +3632,10 @@ function Chat() {
                                       type="button"
                                       className="friend-btn friend-btn-decline"
                                       onClick={() =>
-                                        handleDeclineFriendRequest(st.requestId, user._id)
+                                        handleDeclineFriendRequest(
+                                          st.requestId,
+                                          user._id,
+                                        )
                                       }
                                     >
                                       Decline
@@ -3433,7 +3646,9 @@ function Chat() {
                                 <button
                                   type="button"
                                   className="friend-btn friend-btn-add"
-                                  onClick={() => handleSendFriendRequest(user._id)}
+                                  onClick={() =>
+                                    handleSendFriendRequest(user._id)
+                                  }
                                 >
                                   <UserPlusIcon size={13} />
                                   <span>Add</span>
@@ -3499,6 +3714,8 @@ function Chat() {
                             key={chat._id}
                             className={`sidebar-item ${isSelected ? "active" : ""}`}
                             onClick={() => handleSelectChat(chat)}
+                            onDoubleClick={(e) => openChatCtxMenu(e, chat._id)}
+                            onContextMenu={(e) => openChatCtxMenu(e, chat._id)}
                           >
                             <div
                               className={`avatar ${chat.isGroupChat ? "avatar-group" : online ? "avatar-online" : ""}`}
@@ -3906,6 +4123,222 @@ function Chat() {
             </>
           )}
 
+          {/* TAB 5: FRIENDS VIEW */}
+          {activeNavTab === "contacts" && (
+            <>
+              <div className="sidebar-top">
+                <h2 className="sidebar-tab-title">Friends</h2>
+                <span className="contact-count-chip">
+                  {acceptedContacts.length} friends
+                </span>
+              </div>
+
+              <div className="sidebar-search">
+                <div className="search-input-wrapper">
+                  <span className="search-icon-left">
+                    <SearchIcon
+                      size={16}
+                      color={isDark ? "#a5a5a5" : "#626262"}
+                    />
+                  </span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search friends"
+                    value={contactSearchQuery}
+                    onChange={(e) => setContactSearchQuery(e.target.value)}
+                  />
+                  {contactSearchQuery && (
+                    <button
+                      className="search-clear"
+                      onClick={() => setContactSearchQuery("")}
+                    >
+                      <CrossIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-list-container">
+                {(() => {
+                  const filtered = contactSearchQuery.trim()
+                    ? acceptedContacts.filter(
+                        (c) =>
+                          c.name
+                            ?.toLowerCase()
+                            .includes(contactSearchQuery.toLowerCase()) ||
+                          c.username
+                            ?.toLowerCase()
+                            .includes(contactSearchQuery.toLowerCase()),
+                      )
+                    : acceptedContacts;
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div
+                        style={{
+                          padding: "2.5rem 1.5rem",
+                          color: "var(--text-muted)",
+                          fontSize: "0.88rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ marginBottom: "0.8rem", opacity: 0.6 }}>
+                          <ContactsTabIcon size={36} />
+                        </div>
+                        {contactSearchQuery
+                          ? "No matching contacts found."
+                          : "No accepted contacts yet."}
+                        <div
+                          style={{
+                            fontSize: "0.78rem",
+                            marginTop: "0.4rem",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          Search users in the <strong>Chats</strong> tab to send
+                          contact requests!
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const onlineList = filtered.filter((c) =>
+                    onlineUsers.includes(c._id),
+                  );
+                  const offlineList = filtered.filter(
+                    (c) => !onlineUsers.includes(c._id),
+                  );
+
+                  const renderContactItem = (contact, isOnline) => (
+                    <li
+                      key={contact._id}
+                      className="sidebar-item contact-list-item"
+                      onClick={() => handleSelectUser(contact._id)}
+                      onDoubleClick={(e) => openFriendCtxMenu(e, contact._id)}
+                      onContextMenu={(e) => openFriendCtxMenu(e, contact._id)}
+                      title="Double-click or right-click for options"
+                    >
+                      <div
+                        className={`avatar ${isOnline ? "avatar-online" : ""}`}
+                      >
+                        {renderUserAvatar(contact, 40)}
+                      </div>
+                      <div
+                        className="item-details"
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        <div className="item-name-row">
+                          <span className="item-name">{contact.name}</span>
+                        </div>
+                        <div
+                          className="item-subtext-row"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                          }}
+                        >
+                          {contact.username ? (
+                            <span
+                              className="search-username-handle"
+                              style={{ fontSize: "0.76rem" }}
+                            >
+                              @{contact.username}
+                            </span>
+                          ) : (
+                            <span
+                              className="item-msg"
+                              style={{ fontSize: "0.76rem" }}
+                            >
+                              {contact.bio || "LoopChat user"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div
+                        className="contact-item-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="friend-btn friend-btn-message"
+                          onClick={() => handleSelectUser(contact._id)}
+                        >
+                          Message
+                        </button>
+                      </div>
+                    </li>
+                  );
+
+                  return (
+                    <>
+                      {onlineList.length > 0 && (
+                        <>
+                          <div
+                            className="list-section-title"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.4rem",
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: "50%",
+                                background: "#16a34a",
+                                display: "inline-block",
+                              }}
+                            />
+                            <span>ONLINE — {onlineList.length}</span>
+                          </div>
+                          <ul
+                            className="sidebar-list"
+                            style={{ marginBottom: "1.2rem" }}
+                          >
+                            {onlineList.map((c) => renderContactItem(c, true))}
+                          </ul>
+                        </>
+                      )}
+
+                      {offlineList.length > 0 && (
+                        <>
+                          <div
+                            className="list-section-title"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.4rem",
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: "50%",
+                                background: "#9ca3af",
+                                display: "inline-block",
+                              }}
+                            />
+                            <span>OFFLINE — {offlineList.length}</span>
+                          </div>
+                          <ul className="sidebar-list">
+                            {offlineList.map((c) =>
+                              renderContactItem(c, false),
+                            )}
+                          </ul>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+
           {/* TAB 4: INLINE PROFILE VIEW */}
           {activeNavTab === "profile" && (
             <>
@@ -3985,19 +4418,37 @@ function Chat() {
                         onFocus={() => setIsProfileUsernameFocused(true)}
                         onBlur={() => setIsProfileUsernameFocused(false)}
                         onChange={(e) => {
-                          setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
+                          setEditUsername(
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9_.]/g, ""),
+                          );
                           setProfileUsernameError("");
                         }}
                         placeholder="your_handle"
                       />
                     </div>
                     {profileUsernameError && (
-                      <span style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "0.3rem", display: "block" }}>
+                      <span
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "0.75rem",
+                          marginTop: "0.3rem",
+                          display: "block",
+                        }}
+                      >
                         {profileUsernameError}
                       </span>
                     )}
                     {isProfileUsernameFocused && !profileUsernameError && (
-                      <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}>
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.72rem",
+                          marginTop: "0.25rem",
+                          display: "block",
+                        }}
+                      >
                         3–20 characters · letters, numbers, _ and . only
                       </span>
                     )}
@@ -5292,6 +5743,70 @@ function Chat() {
           <BellIcon size={18} color="#0078d4" />
           <span>{friendRequestToast.message}</span>
         </div>
+      )}
+      {/* ===== CHAT CONTEXT MENU (double-click on chat list item) ===== */}
+      {chatCtxMenu && (
+        <>
+          {/* Backdrop to dismiss */}
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+            onClick={() => setChatCtxMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setChatCtxMenu(null);
+            }}
+          />
+          <div
+            className="ctx-menu"
+            style={{ top: chatCtxMenu.y, left: chatCtxMenu.x, zIndex: 9999 }}
+          >
+            <button
+              className="ctx-menu-item"
+              onClick={() => handleClearChatById(chatCtxMenu.chatId)}
+            >
+              <span className="ctx-menu-icon">🧹</span>
+              Clear Chat
+            </button>
+            <div className="ctx-menu-divider" />
+            <button
+              className="ctx-menu-item ctx-menu-item-danger"
+              onClick={() => handleDeleteChatById(chatCtxMenu.chatId)}
+            >
+              <span className="ctx-menu-icon">🗑️</span>
+              Delete Chat
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ===== FRIEND CONTEXT MENU (double-click on friend list item) ===== */}
+      {friendCtxMenu && (
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+            onClick={() => setFriendCtxMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setFriendCtxMenu(null);
+            }}
+          />
+          <div
+            className="ctx-menu"
+            style={{
+              top: friendCtxMenu.y,
+              left: friendCtxMenu.x,
+              zIndex: 9999,
+            }}
+          >
+            <button
+              className="ctx-menu-item ctx-menu-item-danger"
+              onClick={() => handleRemoveContact(friendCtxMenu.contactId)}
+            >
+              <span className="ctx-menu-icon">👤</span>
+              Remove Friend
+            </button>
+          </div>
+        </>
       )}
     </>
   );

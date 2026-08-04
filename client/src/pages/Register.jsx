@@ -6,6 +6,31 @@ import OTPVerification from "../components/OTPVerification";
 
 const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
 
+function CheckCircleFillIcon({ size = 14 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{
+        display: "inline-block",
+        verticalAlign: "-2px",
+        marginRight: "4px",
+      }}
+    >
+      <circle cx="12" cy="12" r="10" fill="#16a34a" />
+      <path
+        d="M9 12.5l2 2 4.5-4.5"
+        stroke="#ffffff"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function Register() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -41,11 +66,14 @@ function Register() {
     setUsernameChecking(true);
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/users/check-username?username=${cleaned}`
+        `http://localhost:5000/api/users/check-username?username=${cleaned}`,
       );
       setUsernameAvailable(data.available);
       if (!data.available) {
-        setFieldErrors((prev) => ({ ...prev, username: "This username is already taken" }));
+        setFieldErrors((prev) => ({
+          ...prev,
+          username: "This username is already taken",
+        }));
       }
     } catch {
       // silently ignore availability check errors
@@ -66,7 +94,8 @@ function Register() {
     if (!username) {
       errors.username = "Username is required";
     } else if (!USERNAME_REGEX.test(username)) {
-      errors.username = "Username must be 3-20 characters: letters, numbers, _ or .";
+      errors.username =
+        "Username must be 3-20 characters: letters, numbers, _ or .";
     } else if (usernameAvailable === false) {
       errors.username = "This username is already taken";
     }
@@ -74,7 +103,8 @@ function Register() {
     if (!trimmedEmail) {
       errors.email = "Email address is required";
     } else if (!EMAIL_REGEX.test(trimmedEmail)) {
-      errors.email = "Please enter a valid email address (e.g. example@gmail.com)";
+      errors.email =
+        "Please enter a valid email address (e.g. example@gmail.com)";
     }
 
     if (!password) {
@@ -123,7 +153,9 @@ function Register() {
       if (resData?.errors) {
         setFieldErrors(resData.errors);
       } else {
-        setGeneralError(resData?.message || "Registration failed. Please try again.");
+        setGeneralError(
+          resData?.message || "Registration failed. Please try again.",
+        );
       }
     } finally {
       setLoading(false);
@@ -138,16 +170,26 @@ function Register() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "center" }}>
+        <div
+          style={{
+            marginBottom: "1.5rem",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
           <LoopChatLogo size={40} textSize="1.5rem" />
         </div>
 
         {step === "register" ? (
           <>
             <h2 className="auth-title">Create Account</h2>
-            <p className="auth-subtitle">Join LoopChat today and connect in real-time</p>
+            <p className="auth-subtitle">
+              Join LoopChat today and connect in real-time
+            </p>
 
-            {generalError && <div className="auth-alert-error">{generalError}</div>}
+            {generalError && (
+              <div className="auth-alert-error">{generalError}</div>
+            )}
 
             <form onSubmit={submitHandler} className="auth-form" noValidate>
               {/* Full Name */}
@@ -175,8 +217,8 @@ function Register() {
                       fieldErrors.username
                         ? "invalid"
                         : usernameAvailable === true
-                        ? "valid"
-                        : ""
+                          ? "valid"
+                          : ""
                     }`}
                     placeholder="john_doe"
                     type="text"
@@ -186,24 +228,22 @@ function Register() {
                     onBlur={() => setIsUsernameFocused(false)}
                     onChange={(e) => handleUsernameChange(e.target.value)}
                   />
-                  {usernameChecking && (
-                    <span className="username-status checking">Checking...</span>
-                  )}
-                  {!usernameChecking && usernameAvailable === true && (
-                    <span className="username-status available">✓ Available</span>
-                  )}
-                  {!usernameChecking && usernameAvailable === false && (
-                    <span className="username-status taken">✗ Taken</span>
-                  )}
                 </div>
-                {isUsernameFocused && !fieldErrors.username && (
+                {fieldErrors.username ? (
+                  <span className="field-error">{fieldErrors.username}</span>
+                ) : usernameChecking ? (
+                  <span className="username-checking-text">
+                    Checking availability...
+                  </span>
+                ) : usernameAvailable === true ? (
+                  <span className="username-available-text">
+                    <CheckCircleFillIcon size={14} /> Username is available
+                  </span>
+                ) : isUsernameFocused ? (
                   <span className="username-hint">
                     3–20 characters · letters, numbers, _ and . only
                   </span>
-                )}
-                {fieldErrors.username && (
-                  <span className="field-error">{fieldErrors.username}</span>
-                )}
+                ) : null}
               </div>
 
               {/* Email Address */}
@@ -229,7 +269,9 @@ function Register() {
                   placeholder="At least 8 characters"
                   type="password"
                   value={password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
                 />
                 {fieldErrors.password && (
                   <span className="field-error">{fieldErrors.password}</span>
