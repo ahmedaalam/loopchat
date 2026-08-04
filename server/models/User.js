@@ -7,6 +7,14 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,   // allows null for legacy users
+      lowercase: true,
+      trim: true,
+      match: [/^[a-z0-9_.]{3,20}$/, "Username must be 3-20 chars: letters, numbers, _ or ."],
+    },
     email: {
       type: String,
       required: true,

@@ -14,13 +14,26 @@ const generateOTP = () => {
 // ─── REGISTER ─────────────────────────────────────────────────────────────────
 exports.register = async (req, res) => {
   try {
-    let { name, email, password } = req.body;
+    let { name, username, email, password } = req.body;
 
     // 1. Validation checks
     const errors = {};
 
     if (!name || String(name).trim().length < 2) {
       errors.name = "Full name must be at least 2 characters long";
+    }
+
+    const trimmedUsername = username ? String(username).trim().toLowerCase() : "";
+    const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+    if (!trimmedUsername) {
+      errors.username = "Username is required";
+    } else if (!USERNAME_REGEX.test(trimmedUsername)) {
+      errors.username = "Username must be 3-20 characters: letters, numbers, _ or .";
+    } else {
+      const existingUsername = await User.findOne({ username: trimmedUsername });
+      if (existingUsername) {
+        errors.username = "This username is already taken";
+      }
     }
 
     const trimmedEmail = email ? String(email).trim().toLowerCase() : "";
@@ -53,6 +66,7 @@ exports.register = async (req, res) => {
     if (user && !user.isVerified) {
       // Update existing unverified user
       user.name = String(name).trim();
+      user.username = trimmedUsername;
       user.password = hashedPassword;
       user.otp = otp;
       user.otpExpiresAt = otpExpiresAt;
@@ -61,6 +75,7 @@ exports.register = async (req, res) => {
       // Create new user
       user = await User.create({
         name: String(name).trim(),
+        username: trimmedUsername,
         email: trimmedEmail,
         password: hashedPassword,
         isVerified: false,
@@ -129,6 +144,7 @@ exports.verifyOTP = async (req, res) => {
       user: {
         _id: user._id,
         name: user.name,
+        username: user.username || null,
         email: user.email,
       },
       token,
@@ -239,6 +255,7 @@ exports.login = async (req, res) => {
       user: {
         _id: user._id,
         name: user.name,
+        username: user.username || null,
         email: user.email,
       },
       token,

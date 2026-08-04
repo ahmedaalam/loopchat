@@ -1021,9 +1021,11 @@ function Chat() {
   // Profile Edit & View Modals
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [profileUsernameError, setProfileUsernameError] = useState("");
 
   // Contact Info Modal & Blocking State
   const [showContactInfoModal, setShowContactInfoModal] = useState(false);
@@ -2210,19 +2212,30 @@ function Chat() {
   const openProfileEditModal = () => {
     if (!currentUser?.user) return;
     setEditName(currentUser.user.name || "");
+    setEditUsername(currentUser.user.username || "");
     setEditBio(currentUser.user.bio || "Hey there! I am using LoopChat.");
     setEditAvatar(currentUser.user.avatar || "");
+    setProfileUsernameError("");
     setShowProfileModal(true);
   };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
+
+    // Validate username format
+    const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+    if (editUsername && !USERNAME_REGEX.test(editUsername.toLowerCase())) {
+      setProfileUsernameError("Username must be 3-20 characters: letters, numbers, _ or .");
+      return;
+    }
+
     setIsUpdatingProfile(true);
+    setProfileUsernameError("");
     try {
       const { data } = await axios.put(
         "http://localhost:5000/api/users/profile",
-        { name: editName, bio: editBio, avatar: editAvatar },
+        { name: editName, username: editUsername.toLowerCase() || undefined, bio: editBio, avatar: editAvatar },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       const updatedUser = { ...currentUser, user: data };
@@ -2231,7 +2244,12 @@ function Chat() {
       setShowProfileModal(false);
     } catch (err) {
       console.error("Error updating profile:", err);
-      alert("Failed to update profile");
+      const errData = err.response?.data;
+      if (errData?.errors?.username) {
+        setProfileUsernameError(errData.errors.username);
+      } else {
+        alert(errData?.message || "Failed to update profile");
+      }
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -3300,7 +3318,7 @@ function Chat() {
                   <input
                     type="text"
                     className="search-input"
-                    placeholder="Search or start new chat"
+                    placeholder="Search by name or @username"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -3354,12 +3372,14 @@ function Chat() {
                               style={{ cursor: isConnected ? "pointer" : "default" }}
                             >
                               <div className="item-name">{user.name}</div>
-                              <div
-                                className="item-msg"
-                                style={{ fontSize: "0.8rem" }}
-                              >
-                                {user.email}
-                              </div>
+                              {user.username && (
+                                <div
+                                  className="item-msg search-username-handle"
+                                  style={{ fontSize: "0.8rem" }}
+                                >
+                                  @{user.username}
+                                </div>
+                              )}
                             </div>
 
                             <div className="search-item-action">
@@ -3947,6 +3967,35 @@ function Chat() {
                       placeholder="Enter your name"
                       required
                     />
+                  </div>
+
+                  <div
+                    className="profile-input-group"
+                    style={{ marginBottom: "1rem" }}
+                  >
+                    <label>Username</label>
+                    <div className="profile-username-wrapper">
+                      <span className="profile-username-at">@</span>
+                      <input
+                        type="text"
+                        className={`profile-input profile-username-input ${profileUsernameError ? "profile-input-error" : ""}`}
+                        value={editUsername}
+                        maxLength={20}
+                        onChange={(e) => {
+                          setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
+                          setProfileUsernameError("");
+                        }}
+                        placeholder="your_handle"
+                      />
+                    </div>
+                    {profileUsernameError && (
+                      <span style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "0.3rem", display: "block" }}>
+                        {profileUsernameError}
+                      </span>
+                    )}
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}>
+                      3–20 characters · letters, numbers, _ and . only
+                    </span>
                   </div>
 
                   <div

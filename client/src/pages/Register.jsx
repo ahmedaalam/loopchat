@@ -4,21 +4,53 @@ import { Link } from "react-router-dom";
 import LoopChatLogo from "../components/LoopChatLogo";
 import OTPVerification from "../components/OTPVerification";
 
+const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+
 function Register() {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [generalError, setGeneralError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null); // null | true | false
 
   // Steps: "register" | "verify"
   const [step, setStep] = useState("register");
   const [registeredEmail, setRegisteredEmail] = useState("");
 
-  // Strict email regex pattern
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Live-check username availability as user types (debounced by input event)
+  const handleUsernameChange = async (val) => {
+    const cleaned = val.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+    setUsername(cleaned);
+    setUsernameAvailable(null);
+
+    if (fieldErrors.username) {
+      setFieldErrors((prev) => ({ ...prev, username: "" }));
+    }
+
+    if (!cleaned || !USERNAME_REGEX.test(cleaned)) return;
+
+    setUsernameChecking(true);
+    try {
+      const { data } = await axios.get(
+        `http://localhost:5000/api/users/check-username?username=${cleaned}`
+      );
+      setUsernameAvailable(data.available);
+      if (!data.available) {
+        setFieldErrors((prev) => ({ ...prev, username: "This username is already taken" }));
+      }
+    } catch {
+      // silently ignore availability check errors
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
 
   const validate = () => {
     const errors = {};
@@ -27,6 +59,14 @@ function Register() {
 
     if (!trimmedName || trimmedName.length < 2) {
       errors.name = "Full name must be at least 2 characters long";
+    }
+
+    if (!username) {
+      errors.username = "Username is required";
+    } else if (!USERNAME_REGEX.test(username)) {
+      errors.username = "Username must be 3-20 characters: letters, numbers, _ or .";
+    } else if (usernameAvailable === false) {
+      errors.username = "This username is already taken";
     }
 
     if (!trimmedEmail) {
@@ -46,7 +86,6 @@ function Register() {
   };
 
   const handleInputChange = (field, value) => {
-    // Clear field error on typing
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -68,8 +107,9 @@ function Register() {
 
     setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/register", {
+      await axios.post("http://localhost:5000/api/auth/register", {
         name: trimmedName,
+        username,
         email: trimmedEmail,
         password,
       });
@@ -123,6 +163,43 @@ function Register() {
                 )}
               </div>
 
+              {/* Username */}
+              <div className="input-group">
+                <label className="input-label">Username</label>
+                <div className="username-input-wrapper">
+                  <span className="username-at-prefix">@</span>
+                  <input
+                    className={`auth-input username-input ${
+                      fieldErrors.username
+                        ? "invalid"
+                        : usernameAvailable === true
+                        ? "valid"
+                        : ""
+                    }`}
+                    placeholder="john_doe"
+                    type="text"
+                    value={username}
+                    maxLength={20}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                  />
+                  {usernameChecking && (
+                    <span className="username-status checking">Checking...</span>
+                  )}
+                  {!usernameChecking && usernameAvailable === true && (
+                    <span className="username-status available">✓ Available</span>
+                  )}
+                  {!usernameChecking && usernameAvailable === false && (
+                    <span className="username-status taken">✗ Taken</span>
+                  )}
+                </div>
+                <span className="username-hint">
+                  3–20 characters · letters, numbers, _ and . only
+                </span>
+                {fieldErrors.username && (
+                  <span className="field-error">{fieldErrors.username}</span>
+                )}
+              </div>
+
               {/* Email Address */}
               <div className="input-group">
                 <label className="input-label">Email Address</label>
@@ -153,7 +230,11 @@ function Register() {
                 )}
               </div>
 
-              <button type="submit" className="auth-button" disabled={loading}>
+              <button
+                type="submit"
+                className="auth-button"
+                disabled={loading || usernameChecking}
+              >
                 {loading ? "Sending Verification Code..." : "Create Account"}
               </button>
             </form>

@@ -6,7 +6,11 @@ const {
   getUserProfile,
   blockUser,
   unblockUser,
+  checkUsername,
 } = require("../controllers/userController");
+
+// Public route — used during registration to check username availability
+router.get("/check-username", checkUsername);
 
 router.get("/", protect, getAllUsers);
 router.put("/profile", protect, updateProfile);
@@ -14,4 +18,4 @@ router.get("/profile/:userId", protect, getUserProfile);
 router.post("/block/:targetUserId", protect, blockUser);
 router.post("/unblock/:targetUserId", protect, unblockUser);
 
-module.exports = router;
+module.exports = router;

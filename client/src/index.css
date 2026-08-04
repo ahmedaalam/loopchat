@@ -4043,3 +4043,97 @@ html[data-theme="dark"] .nav-rail-item.active {
     opacity: 1;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   USERNAME FIELD — REGISTRATION & PROFILE
+═══════════════════════════════════════════════════════ */
+
+/* Registration form username wrapper */
+.username-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.username-at-prefix {
+  position: absolute;
+  left: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  pointer-events: none;
+  z-index: 1;
+  line-height: 1;
+}
+
+.username-input {
+  padding-left: 28px !important;
+  letter-spacing: 0.01em;
+}
+
+.username-status {
+  position: absolute;
+  right: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.username-status.checking {
+  color: var(--text-3);
+}
+
+.username-status.available {
+  color: #16a34a;
+}
+
+.username-status.taken {
+  color: #ef4444;
+}
+
+.username-hint {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* auth-input valid state (green border when username is available) */
+.auth-input.valid {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+}
+
+/* Profile settings username wrapper */
+.profile-username-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-username-at {
+  position: absolute;
+  left: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.profile-username-input {
+  padding-left: 26px !important;
+}
+
+.profile-input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* @username handle chip in search result cards */
+.search-username-handle {
+  color: var(--accent-text);
+  font-weight: 500;
+  font-size: 0.78rem !important;
+}
