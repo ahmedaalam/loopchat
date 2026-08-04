@@ -528,15 +528,11 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   right: 0.7rem;
   background: transparent;
   border: none;
-  color: var(--text-3);
+  color: #a5a5a5;
   cursor: pointer;
   font-size: 0.75rem;
   line-height: 1;
   transition: var(--transition);
-}
-
-.search-clear:hover {
-  color: var(--text-2);
 }
 
 /* Sidebar list */
@@ -3840,4 +3836,210 @@ html[data-theme="dark"] .nav-rail-item.active {
 .call-quick-btn:hover {
   background: #2e2f2f;
   transform: scale(1.08);
+}
+
+/* ==========================================================================
+   FRIEND / CONTACT REQUEST STYLES
+   ========================================================================== */
+
+/* Bell badge counter */
+.friend-req-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Dropdown Panel */
+.friend-requests-dropdown {
+  position: absolute;
+  top: 2.6rem;
+  right: 0;
+  width: 320px;
+  max-height: 380px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.friend-req-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.friend-req-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.friend-req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.friend-req-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.friend-req-item:last-child {
+  border-bottom: none;
+}
+
+.friend-req-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Action Buttons */
+.friend-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 0.32rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.friend-btn-add {
+  background: #0078d4;
+  color: #ffffff;
+}
+
+.friend-btn-add:hover {
+  background: #0066b8;
+}
+
+.friend-btn-accept {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.friend-btn-accept:hover {
+  background: #15803d;
+}
+
+.friend-btn-decline {
+  background: #374151;
+  color: #f3f4f6;
+}
+
+.friend-btn-decline:hover {
+  background: #4b5563;
+}
+
+.friend-btn-message {
+  background: rgba(0, 120, 212, 0.15);
+  color: #0078d4;
+  border: 1px solid rgba(0, 120, 212, 0.3);
+}
+
+.friend-btn-message:hover {
+  background: rgba(0, 120, 212, 0.25);
+}
+
+.friend-pending-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.friend-badge-pending {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  font-weight: 500;
+}
+
+.friend-btn-cancel-sm {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.friend-btn-cancel-sm:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.search-item-action {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.friend-btn-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+/* Toast Overlay */
+.friend-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid #0078d4;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  padding: 0.75rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 999;
+  font-size: 0.88rem;
+  font-weight: 500;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

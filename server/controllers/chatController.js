@@ -1,4 +1,5 @@
 const Chat = require("../models/Chat");
+const FriendRequest = require("../models/FriendRequest");
 
 const populateOptions = [
   { path: "users", select: "-password" },
@@ -29,6 +30,20 @@ exports.accessChat = async (req, res) => {
 
   if (chat) {
     return res.json(chat);
+  }
+
+  // ── Friendship guard: only accepted friends can start a new 1-on-1 chat ──
+  const friendship = await FriendRequest.findOne({
+    $or: [
+      { sender: req.user, receiver: userId, status: "accepted" },
+      { sender: userId, receiver: req.user, status: "accepted" },
+    ],
+  });
+
+  if (!friendship) {
+    return res.status(403).json({
+      message: "You must be connected with this user before messaging them.",
+    });
   }
 
   let newChat = await Chat.create({

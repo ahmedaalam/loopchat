@@ -18,6 +18,7 @@ const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const friendRoutes = require("./routes/friendRoutes");
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/friends", friendRoutes);
 
 // ================= SOCKET.IO SETUP =================
 
@@ -136,6 +138,25 @@ io.on("connection", (socket) => {
     if (chatId) {
       socket.to(chatId).emit("chat deleted", { chatId });
     }
+  });
+
+  // ── Friend Request real-time events ────────────────────────────────────────
+
+  // Sender notifies receiver of a new incoming request
+  socket.on("friend_request_sent", ({ receiverId, request }) => {
+    io.to(receiverId).emit("friend_request_received", request);
+    console.log(`👥 Friend request sent to ${receiverId}`);
+  });
+
+  // Receiver notifies sender that their request was accepted
+  socket.on("friend_request_accepted", ({ senderId, request }) => {
+    io.to(senderId).emit("friend_request_accepted", request);
+    console.log(`✅ Friend request accepted, notifying ${senderId}`);
+  });
+
+  // Receiver notifies sender that their request was declined
+  socket.on("friend_request_declined", ({ senderId, requestId }) => {
+    io.to(senderId).emit("friend_request_declined", { requestId });
   });
 
   // ================= WEBRTC VOICE & VIDEO CALL SIGNALING =================

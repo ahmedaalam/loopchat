@@ -269,6 +269,36 @@ function TrashIcon({ size = 13, color = "currentColor" }) {
   );
 }
 
+function BellIcon({ size = 18, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function UserPlusIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <line x1="20" y1="8" x2="20" y2="14" />
+      <line x1="23" y1="11" x2="17" y2="11" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  );
+}
+
+
 function ChevronDownIcon({ size = 14, color = "currentColor" }) {
   return (
     <svg
@@ -1000,6 +1030,12 @@ function Chat() {
   const [contactInfoData, setContactInfoData] = useState(null);
   const [isBlockingActionLoading, setIsBlockingActionLoading] = useState(false);
 
+  // ─── Friend / Contact Request State ──────────────────────────────────────
+  const [friendStatuses, setFriendStatuses] = useState({}); // { userId: { status, requestId, isSender } }
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [showFriendRequestsPanel, setShowFriendRequestsPanel] = useState(false);
+  const [friendRequestToast, setFriendRequestToast] = useState(null); // { message }
+
   // Presence & Replying State
   const [isPeerRecordingAudio, setIsPeerRecordingAudio] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -1151,6 +1187,7 @@ function Chat() {
     } else {
       setCurrentUser(storedUser);
       fetchChats(storedUser.token);
+      // Load pending friend requests on startup
     }
 
     if ("Notification" in window && Notification.permission === "default") {
@@ -1166,6 +1203,11 @@ function Chat() {
     socketInstance.emit("setup", currentUser.user._id);
     socketInstance.on("online users", (users) => setOnlineUsers(users));
     return () => socketInstance.disconnect();
+  }, [currentUser]);
+
+  // Fetch pending friend requests when user logs in
+  useEffect(() => {
+    if (currentUser) fetchFriendRequests();
   }, [currentUser]);
 
   // Helper: Get recipient user in DM chat
@@ -1406,6 +1448,52 @@ function Chat() {
     socket.on("call rejected", handleCallRejected);
     socket.on("call ended", handleCallEnded);
 
+    // ── Friend request real-time events ──────────────────────────────────────
+    const handleFriendRequestReceived = (request) => {
+      setIncomingRequests((prev) => {
+        const exists = prev.some((r) => r._id === request._id);
+        return exists ? prev : [request, ...prev];
+      });
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [request.sender._id]: {
+          status: "pending",
+          requestId: request._id,
+          isSender: false,
+        },
+      }));
+      setFriendRequestToast({ message: `${request.sender?.name} sent you a contact request!` });
+      setTimeout(() => setFriendRequestToast(null), 3500);
+    };
+
+    const handleFriendRequestAcceptedEvt = (request) => {
+      const friendId = request.receiver?._id;
+      if (friendId) {
+        setFriendStatuses((prev) => ({
+          ...prev,
+          [friendId]: { status: "accepted", requestId: request._id, isSender: true },
+        }));
+      }
+      setFriendRequestToast({ message: `${request.receiver?.name} accepted your contact request!` });
+      setTimeout(() => setFriendRequestToast(null), 3500);
+    };
+
+    const handleFriendRequestDeclinedEvt = ({ requestId }) => {
+      setFriendStatuses((prev) => {
+        const updated = { ...prev };
+        for (const uid of Object.keys(updated)) {
+          if (updated[uid]?.requestId === requestId) {
+            updated[uid] = { status: "declined" };
+          }
+        }
+        return updated;
+      });
+    };
+
+    socket.on("friend_request_received", handleFriendRequestReceived);
+    socket.on("friend_request_accepted", handleFriendRequestAcceptedEvt);
+    socket.on("friend_request_declined", handleFriendRequestDeclinedEvt);
+
     return () => {
       socket.off("receive message", handleReceivedMessage);
       socket.off("messages read", handleMessagesRead);
@@ -1421,6 +1509,9 @@ function Chat() {
       socket.off("ice candidate", handleIceCandidate);
       socket.off("call rejected", handleCallRejected);
       socket.off("call ended", handleCallEnded);
+      socket.off("friend_request_received", handleFriendRequestReceived);
+      socket.off("friend_request_accepted", handleFriendRequestAcceptedEvt);
+      socket.off("friend_request_declined", handleFriendRequestDeclinedEvt);
     };
   }, [socket, markChatAsRead, cleanupCall]);
 
@@ -1755,6 +1846,152 @@ function Chat() {
     }
   };
 
+  // ─── Friend Request API helpers ───────────────────────────────────────────
+  const fetchFriendRequests = async () => {
+    if (!currentUser) return;
+    try {
+      const { data } = await axios.get(
+        "http://localhost:5000/api/friends/requests",
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setIncomingRequests(data.incoming || []);
+    } catch (err) {
+      console.error("Error fetching friend requests:", err);
+    }
+  };
+
+  const loadFriendshipStatus = async (userId) => {
+    if (!currentUser || !userId) return;
+    try {
+      const { data } = await axios.get(
+        `http://localhost:5000/api/friends/status/${userId}`,
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setFriendStatuses((prev) => ({ ...prev, [userId]: data }));
+    } catch (err) {
+      console.error("Error loading friendship status:", err);
+    }
+  };
+
+  const handleSendFriendRequest = async (userId) => {
+    if (!currentUser) return;
+    try {
+      const { data } = await axios.post(
+        `http://localhost:5000/api/friends/request/${userId}`,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: { status: "pending", requestId: data._id, isSender: true },
+      }));
+      socket?.emit("friend_request_sent", { receiverId: userId, request: data });
+      showToast("Contact request sent!");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to send request.");
+    }
+  };
+
+  const handleAcceptFriendRequest = async (requestId, senderId) => {
+    if (!currentUser) return;
+    try {
+      const { data } = await axios.post(
+        `http://localhost:5000/api/friends/accept/${requestId}`,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [senderId]: { status: "accepted", requestId, isSender: false },
+      }));
+      setIncomingRequests((prev) => prev.filter((r) => r._id !== requestId));
+      socket?.emit("friend_request_accepted", { senderId, request: data });
+      showToast("Contact request accepted!");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to accept request.");
+    }
+  };
+
+  const handleDeclineFriendRequest = async (requestId, senderId) => {
+    if (!currentUser) return;
+    try {
+      await axios.post(
+        `http://localhost:5000/api/friends/decline/${requestId}`,
+        {},
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [senderId]: { status: "declined", requestId, isSender: false },
+      }));
+      setIncomingRequests((prev) => prev.filter((r) => r._id !== requestId));
+      socket?.emit("friend_request_declined", { senderId, requestId });
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to decline request.");
+    }
+  };
+
+  const handleCancelFriendRequest = async (requestId, userId) => {
+    if (!currentUser) return;
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/friends/cancel/${requestId}`,
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: { status: "none" },
+      }));
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to cancel request.");
+    }
+  };
+
+  const showToast = (message) => {
+    setFriendRequestToast({ message });
+    setTimeout(() => setFriendRequestToast(null), 3500);
+  };
+
+  const handleSelectUser = async (userId) => {
+    if (!currentUser || !userId) return;
+
+    // Check if a 1-on-1 chat already exists with this user
+    const existing = chats.find(
+      (c) =>
+        !c.isGroupChat &&
+        c.users.some(
+          (u) => (typeof u === "object" ? u._id : u) === userId
+        )
+    );
+
+    if (existing) {
+      handleSelectChat(existing);
+      setSearchQuery("");
+      setMobileChatOpen(true);
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(
+        "http://localhost:5000/api/chat",
+        { userId },
+        { headers: { Authorization: `Bearer ${currentUser.token}` } }
+      );
+
+      if (!chats.some((c) => c._id === data._id)) {
+        setChats((prev) => [data, ...prev]);
+      }
+      handleSelectChat(data);
+      setSearchQuery("");
+      setMobileChatOpen(true);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        "You must be connected with this user before messaging them.";
+      showToast(msg);
+    }
+  };
+
   // Fetch messages
   const fetchMessages = async (chatId) => {
     if (!currentUser) return;
@@ -1794,6 +2031,16 @@ function Chat() {
     const t = setTimeout(searchUsers, 400);
     return () => clearTimeout(t);
   }, [searchQuery, currentUser]);
+
+  // Load friendship status for each search result
+  useEffect(() => {
+    if (!currentUser || searchResults.length === 0) return;
+    searchResults.forEach((user) => {
+      if (!friendStatuses[user._id]) {
+        loadFriendshipStatus(user._id);
+      }
+    });
+  }, [searchResults]);
 
   // Group modal user search (debounced)
   useEffect(() => {
@@ -1867,28 +2114,6 @@ function Chat() {
     }
     setPendingFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // Open 1-to-1 chat
-  const handleSelectUser = async (userId) => {
-    if (!currentUser) return;
-    try {
-      const { data } = await axios.post(
-        "http://localhost:5000/api/chat",
-        { userId },
-        { headers: { Authorization: `Bearer ${currentUser.token}` } },
-      );
-      if (!chats.some((c) => c._id === data._id)) {
-        setChats((prev) => [data, ...prev]);
-      }
-      setSelectedChat(data);
-      fetchMessages(data._id);
-      setSearchQuery("");
-      setSearchResults([]);
-      setMobileChatOpen(true);
-    } catch (err) {
-      console.error("Error accessing chat:", err);
-    }
   };
 
   // Select existing chat
@@ -2891,6 +3116,110 @@ function Chat() {
                     position: "relative",
                   }}
                 >
+                  {/* Friend Requests Bell */}
+                  <button
+                    type="button"
+                    className="sidebar-menu-dots-btn friend-req-bell"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFriendRequestsPanel((prev) => !prev);
+                    }}
+                    title="Contact Requests"
+                    style={{ position: "relative" }}
+                  >
+                    <BellIcon size={20} />
+                    {incomingRequests.length > 0 && (
+                      <span className="friend-req-badge">{incomingRequests.length}</span>
+                    )}
+                  </button>
+
+                  {showFriendRequestsPanel && (
+                    <>
+                      <div
+                        className="dropdown-backdrop"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowFriendRequestsPanel(false);
+                        }}
+                      />
+                      <div
+                        className="friend-requests-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="friend-req-header">
+                          <span>Contact Requests</span>
+                          <button
+                            type="button"
+                            className="close-modal-btn"
+                            onClick={() => setShowFriendRequestsPanel(false)}
+                            style={{ padding: "2px", marginLeft: "auto" }}
+                          >
+                            <CrossIcon size={14} />
+                          </button>
+                        </div>
+
+                        {incomingRequests.length === 0 ? (
+                          <div className="friend-req-empty">
+                            No pending contact requests
+                          </div>
+                        ) : (
+                          <ul className="friend-req-list">
+                            {incomingRequests.map((req) => (
+                              <li key={req._id} className="friend-req-item">
+                                <div className="avatar">
+                                  {renderUserAvatar(req.sender, 34)}
+                                </div>
+                                <div
+                                  className="item-details"
+                                  style={{ flex: 1, minWidth: 0 }}
+                                >
+                                  <div
+                                    className="item-name"
+                                    style={{ fontSize: "0.85rem" }}
+                                  >
+                                    {req.sender?.name}
+                                  </div>
+                                  <div
+                                    className="item-msg"
+                                    style={{ fontSize: "0.75rem" }}
+                                  >
+                                    {req.sender?.email}
+                                  </div>
+                                </div>
+                                <div className="friend-req-actions">
+                                  <button
+                                    type="button"
+                                    className="friend-btn friend-btn-accept"
+                                    onClick={() =>
+                                      handleAcceptFriendRequest(
+                                        req._id,
+                                        req.sender._id
+                                      )
+                                    }
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="friend-btn friend-btn-decline"
+                                    onClick={() =>
+                                      handleDeclineFriendRequest(
+                                        req._id,
+                                        req.sender._id
+                                      )
+                                    }
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                   <button
                     type="button"
                     className="sidebar-menu-dots-btn"
@@ -2991,28 +3320,108 @@ function Chat() {
                   <>
                     <div className="list-section-title">Search Results</div>
                     <ul className="sidebar-list">
-                      {searchResults.map((user) => (
-                        <li
-                          key={user._id}
-                          className="sidebar-item"
-                          onClick={() => handleSelectUser(user._id)}
-                        >
-                          <div
-                            className={`avatar ${onlineUsers.includes(user._id) ? "avatar-online" : ""}`}
+                      {searchResults.map((user) => {
+                        const existingChat = chats.find(
+                          (c) =>
+                            !c.isGroupChat &&
+                            c.users.some(
+                              (u) => (typeof u === "object" ? u._id : u) === user._id
+                            )
+                        );
+                        const st = friendStatuses[user._id];
+                        const isConnected = !!existingChat || st?.status === "accepted";
+                        const isPending = st?.status === "pending";
+
+                        return (
+                          <li
+                            key={user._id}
+                            className="sidebar-item friend-search-item"
                           >
-                            {renderUserAvatar(user, 40)}
-                          </div>
-                          <div className="item-details">
-                            <div className="item-name">{user.name}</div>
                             <div
-                              className="item-msg"
-                              style={{ fontSize: "0.8rem" }}
+                              className={`avatar ${onlineUsers.includes(user._id) ? "avatar-online" : ""}`}
+                              onClick={() => {
+                                if (isConnected) handleSelectUser(user._id);
+                              }}
+                              style={{ cursor: isConnected ? "pointer" : "default" }}
                             >
-                              {user.email}
+                              {renderUserAvatar(user, 40)}
                             </div>
-                          </div>
-                        </li>
-                      ))}
+                            <div
+                              className="item-details"
+                              onClick={() => {
+                                if (isConnected) handleSelectUser(user._id);
+                              }}
+                              style={{ cursor: isConnected ? "pointer" : "default" }}
+                            >
+                              <div className="item-name">{user.name}</div>
+                              <div
+                                className="item-msg"
+                                style={{ fontSize: "0.8rem" }}
+                              >
+                                {user.email}
+                              </div>
+                            </div>
+
+                            <div className="search-item-action">
+                              {isConnected ? (
+                                <button
+                                  type="button"
+                                  className="friend-btn friend-btn-message"
+                                  onClick={() => handleSelectUser(user._id)}
+                                >
+                                  Message
+                                </button>
+                              ) : isPending ? (
+                                st.isSender ? (
+                                  <div className="friend-pending-group">
+                                    <span className="friend-badge-pending">Pending</span>
+                                    <button
+                                      type="button"
+                                      className="friend-btn-cancel-sm"
+                                      title="Cancel Request"
+                                      onClick={() =>
+                                        handleCancelFriendRequest(st.requestId, user._id)
+                                      }
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="friend-btn-row">
+                                    <button
+                                      type="button"
+                                      className="friend-btn friend-btn-accept"
+                                      onClick={() =>
+                                        handleAcceptFriendRequest(st.requestId, user._id)
+                                      }
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="friend-btn friend-btn-decline"
+                                      onClick={() =>
+                                        handleDeclineFriendRequest(st.requestId, user._id)
+                                      }
+                                    >
+                                      Decline
+                                    </button>
+                                  </div>
+                                )
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="friend-btn friend-btn-add"
+                                  onClick={() => handleSendFriendRequest(user._id)}
+                                >
+                                  <UserPlusIcon size={13} />
+                                  <span>Add</span>
+                                </button>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                       {searchResults.length === 0 && (
                         <div
                           style={{
@@ -4820,10 +5229,16 @@ function Chat() {
         onEnd={endCall}
         isMicMuted={isMicMuted}
         isVideoOff={isVideoOff}
-        onToggleMic={toggleMic}
-        onToggleVideo={toggleVideo}
         callDuration={callDuration}
       />
+
+      {/* ===== FRIEND REQUEST TOAST NOTIFICATION ===== */}
+      {friendRequestToast && (
+        <div className="friend-toast">
+          <BellIcon size={18} color="#0078d4" />
+          <span>{friendRequestToast.message}</span>
+        </div>
+      )}
     </>
   );
 }
