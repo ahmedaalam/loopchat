@@ -169,7 +169,7 @@ body {
 }
 
 .auth-input {
-  background: var(--surface-4);
+  background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.85rem 1rem;
@@ -3017,6 +3017,14 @@ html:not([data-theme="dark"]) .item-msg {
    ╚═══════════════════════════════════════════════════════╝ */
 
 /* ── Messages pane: warm light background ───────────────────────────────── */
+html:not([data-theme="dark"]) .auth-container {
+  background-color: #f5f1eb;
+}
+
+html:not([data-theme="dark"]) .auth-input {
+  background: #f5f1eb;
+}
+
 html:not([data-theme="dark"]) .input-pane {
   background: #f5f1eb;
 }
@@ -3138,14 +3146,13 @@ html:not([data-theme="dark"]) .auth-button,
 html:not([data-theme="dark"]) .callbackmodal-accept,
 html:not([data-theme="dark"]) .notification-badge {
   background: #cfe8fb;
-  color: #0a1929;
+  color: #0078d4;
 }
 
 html:not([data-theme="dark"]) .send-button:hover,
 html:not([data-theme="dark"]) .auth-button:hover,
 html:not([data-theme="dark"]) .callbackmodal-accept:hover {
   background: #bcdcfa;
-  color: #0a1929;
 }
 
 html:not([data-theme="dark"]) .avatar:not(.avatar-group) {
@@ -3333,6 +3340,22 @@ html:not([data-theme="dark"]) .contact-detail-box {
 html:not([data-theme="dark"]) .profile-input {
   background-color: #f6f5f4 !important;
   border: none !important;
+}
+
+html:not([data-theme="dark"]) .auth-link a {
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .auth-link a:hover {
+  color: #005bb5 !important;
+}
+
+html:not([data-theme="dark"]) .forgot-password-link {
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .forgot-password-link:hover {
+  color: #005bb5 !important;
 }
 
 /* ==========================================================================

@@ -1026,6 +1026,7 @@ function Chat() {
   const [editAvatar, setEditAvatar] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUsernameError, setProfileUsernameError] = useState("");
+  const [isProfileUsernameFocused, setIsProfileUsernameFocused] = useState(false);
 
   // Contact Info Modal & Blocking State
   const [showContactInfoModal, setShowContactInfoModal] = useState(false);
@@ -3981,6 +3982,8 @@ function Chat() {
                         className={`profile-input profile-username-input ${profileUsernameError ? "profile-input-error" : ""}`}
                         value={editUsername}
                         maxLength={20}
+                        onFocus={() => setIsProfileUsernameFocused(true)}
+                        onBlur={() => setIsProfileUsernameFocused(false)}
                         onChange={(e) => {
                           setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""));
                           setProfileUsernameError("");
@@ -3993,9 +3996,11 @@ function Chat() {
                         {profileUsernameError}
                       </span>
                     )}
-                    <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}>
-                      3–20 characters · letters, numbers, _ and . only
-                    </span>
+                    {isProfileUsernameFocused && !profileUsernameError && (
+                      <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}>
+                        3–20 characters · letters, numbers, _ and . only
+                      </span>
+                    )}
                   </div>
 
                   <div

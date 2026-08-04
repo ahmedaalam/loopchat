@@ -22,6 +22,8 @@ function Register() {
   const [step, setStep] = useState("register");
   const [registeredEmail, setRegisteredEmail] = useState("");
 
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   // Live-check username availability as user types (debounced by input event)
@@ -180,6 +182,8 @@ function Register() {
                     type="text"
                     value={username}
                     maxLength={20}
+                    onFocus={() => setIsUsernameFocused(true)}
+                    onBlur={() => setIsUsernameFocused(false)}
                     onChange={(e) => handleUsernameChange(e.target.value)}
                   />
                   {usernameChecking && (
@@ -192,9 +196,11 @@ function Register() {
                     <span className="username-status taken">✗ Taken</span>
                   )}
                 </div>
-                <span className="username-hint">
-                  3–20 characters · letters, numbers, _ and . only
-                </span>
+                {isUsernameFocused && !fieldErrors.username && (
+                  <span className="username-hint">
+                    3–20 characters · letters, numbers, _ and . only
+                  </span>
+                )}
                 {fieldErrors.username && (
                   <span className="field-error">{fieldErrors.username}</span>
                 )}
