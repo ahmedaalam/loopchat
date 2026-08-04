@@ -634,6 +634,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 }
 
 .item-msg {
+  color: #a5a5a5;
   font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
@@ -1424,7 +1425,7 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
 
 .group-member-tag {
   font-size: 0.7rem;
-  color: var(--text-3);
+  color: #a5a5a5;
   background: var(--surface-3);
   border-radius: 20px;
   padding: 0.05rem 0.45rem;
@@ -3298,6 +3299,38 @@ html:not([data-theme="dark"]) .contact-email {
 html:not([data-theme="dark"]) .contact-detail-title {
   color: #626262 !important;
 }
+
+html:not([data-theme="dark"]) .list-section-title {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .item-msg {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .group-member-tag {
+  color: #626262 !important;
+}
+
+html:not([data-theme="dark"]) .group-member-tag.admin-tag {
+  color: #0078d4 !important;
+}
+
+html:not([data-theme="dark"]) .btn-block-contact:hover {
+  background-color: #fde5eb !important;
+  color: #b80531 !important;
+}
+
+html:not([data-theme="dark"]) .contact-detail-box {
+  background-color: #f6f5f4 !important;
+  border: none !important;
+}
+
+html:not([data-theme="dark"]) .profile-input {
+  background-color: #f6f5f4 !important;
+  border: none !important;
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */

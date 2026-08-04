@@ -3353,20 +3353,24 @@ function Chat() {
                               >
                                 {msg.callInfo?.isVideoCall ? (
                                   <FilledVideoIcon
-                                    size={14}
+                                    size={16}
                                     color={
                                       !iMadeCall && msg.callInfo?.isMissed
                                         ? "#ef4444"
-                                        : "var(--text-3)"
+                                        : isDark
+                                          ? "#a5a5a5"
+                                          : "#626262"
                                     }
                                   />
                                 ) : (
                                   <FilledPhoneIcon
-                                    size={14}
+                                    size={16}
                                     color={
                                       !iMadeCall && msg.callInfo?.isMissed
                                         ? "#ef4444"
-                                        : "var(--text-3)"
+                                        : isDark
+                                          ? "#a5a5a5"
+                                          : "#626262"
                                     }
                                   />
                                 )}
@@ -3730,15 +3734,6 @@ function Chat() {
                     </>
                   )}
 
-                  {selectedChat.isGroupChat && (
-                    <button
-                      className="leave-group-btn"
-                      onClick={handleLeaveGroup}
-                    >
-                      Leave Group
-                    </button>
-                  )}
-
                   {/* 3-Dot WhatsApp Header Action Menu */}
                   <div style={{ position: "relative" }}>
                     <button
@@ -3799,6 +3794,19 @@ function Chat() {
                             <TrashIcon size={14} />
                             <span>Delete Chat</span>
                           </button>
+                          {selectedChat.isGroupChat && (
+                            <button
+                              type="button"
+                              className="context-menu-item danger"
+                              onClick={() => {
+                                setShowChatHeaderMenu(false);
+                                handleLeaveGroup();
+                              }}
+                            >
+                              <LogOutIcon size={14} />
+                              <span>Leave Group</span>
+                            </button>
+                          )}
                         </div>
                       </>
                     )}
@@ -4785,7 +4793,7 @@ function Chat() {
                             >
                               <PhoneCallIcon
                                 size={16}
-                                color={isDark ? "#fff" : "#626262"}
+                                color={isDark ? "#a5a5a5" : "#626262"}
                               />
                             </button>
                             <button
@@ -4803,7 +4811,7 @@ function Chat() {
                             >
                               <VideoIcon
                                 size={16}
-                                color={isDark ? "#fff" : "#626262"}
+                                color={isDark ? "#a5a5a5" : "#626262"}
                               />
                             </button>
                           </div>
