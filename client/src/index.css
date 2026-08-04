@@ -3017,6 +3017,10 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
    ╚═══════════════════════════════════════════════════════╝ */
 
 /* ── Messages pane: warm light background ───────────────────────────────── */
+html:not([data-theme="dark"]) .input-pane {
+  background: #f5f1eb;
+}
+
 html:not([data-theme="dark"]) .messages-pane {
   background: #f5f1eb;
 }
