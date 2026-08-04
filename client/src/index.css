@@ -644,6 +644,10 @@ html:not([data-theme="dark"]) .profile-avatar-placeholder {
   font-weight: 400;
 }
 
+html:not([data-theme="dark"]) .item-msg {
+  color: #626262;
+}
+
 .notification-badge {
   background: #0078d4 !important;
   color: #ffffff !important;

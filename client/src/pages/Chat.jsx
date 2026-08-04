@@ -2434,15 +2434,11 @@ function Chat() {
           >
             <FilledVideoIcon
               size={16}
-              color={
-                isDark
-                  ? isMeSender
-                    ? "var(--accent-text)"
-                    : "#ef4444"
-                  : "#626262"
-              }
+              color={isMeSender ? (isDark ? "#a5a5a5" : "#626262") : "#ef4444"}
             />
-            <span>{isMeSender ? "Video call" : "Missed video call"}</span>
+            <span style={{ color: isDark ? "#a5a5a5" : "#626262" }}>
+              {isMeSender ? "Video call" : "Missed video call"}
+            </span>
           </span>
         );
       }
@@ -2456,15 +2452,11 @@ function Chat() {
         >
           <FilledPhoneIcon
             size={16}
-            color={
-              isDark
-                ? isMeSender
-                  ? "var(--accent-text)"
-                  : "#ef4444"
-                : "#626262"
-            }
+            color={isMeSender ? (isDark ? "#a5a5a5" : "#626262") : "#ef4444"}
           />
-          <span>{isMeSender ? "Voice call" : "Missed voice call"}</span>
+          <span style={{ color: isDark ? "#626262" : "#a5a5a5" }}>
+            {isMeSender ? "Voice call" : "Missed voice call"}
+          </span>
         </span>
       );
     }
@@ -3112,12 +3104,7 @@ function Chat() {
                                 </span>
                               </div>
                               <div className="item-subtext-row">
-                                <span
-                                  className="item-msg"
-                                  style={{
-                                    color: isDark ? "#a5a5a5" : "#626262",
-                                  }}
-                                >
+                                <span className="item-msg">
                                   {chatNotifications.length > 0 ? (
                                     <span
                                       style={{
