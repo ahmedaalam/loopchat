@@ -1059,6 +1059,8 @@ function Chat() {
   const [editUsername, setEditUsername] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [hasProfileChanges, setHasProfileChanges] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUsernameError, setProfileUsernameError] = useState("");
   const [profileUsernameChecking, setProfileUsernameChecking] = useState(false);
@@ -1077,6 +1079,8 @@ function Chat() {
     setProfileUsernameError("");
     setProfileUsernameChecking(false);
     setProfileUsernameAvailable(null);
+    setHasProfileChanges(false);
+    setIsProfileEditing(false);
   }, [currentUser]);
 
   // Contact Info Modal & Blocking State
@@ -2517,7 +2521,6 @@ function Chat() {
     e.preventDefault();
     if (!currentUser) return;
 
-    // Validate username format
     const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
     if (editUsername && !USERNAME_REGEX.test(editUsername.toLowerCase())) {
       setProfileUsernameError(
@@ -2547,6 +2550,8 @@ function Chat() {
       const updatedUser = { ...currentUser, user: data };
       setCurrentUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      setHasProfileChanges(false);
+      setIsProfileEditing(false);
       setShowProfileModal(false);
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -2559,6 +2564,19 @@ function Chat() {
     } finally {
       setIsUpdatingProfile(false);
     }
+  };
+
+  const startProfileEditing = () => {
+    setIsProfileEditing(true);
+    setHasProfileChanges(false);
+    setProfileUsernameError("");
+    setProfileUsernameChecking(false);
+    setProfileUsernameAvailable(null);
+  };
+
+  const handleInlineProfileFieldChange = (setter, value) => {
+    setter(value);
+    setHasProfileChanges(true);
   };
 
   const handleAvatarFileUpload = async (e) => {
@@ -4542,9 +4560,15 @@ function Chat() {
                       type="text"
                       className="profile-input"
                       value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
+                      onChange={(e) =>
+                        handleInlineProfileFieldChange(
+                          setEditName,
+                          e.target.value,
+                        )
+                      }
                       placeholder="Enter your name"
                       required
+                      disabled={!isProfileEditing}
                     />
                   </div>
 
@@ -4562,10 +4586,21 @@ function Chat() {
                         maxLength={20}
                         onFocus={() => setIsProfileUsernameFocused(true)}
                         onBlur={() => setIsProfileUsernameFocused(false)}
-                        onChange={(e) =>
-                          handleProfileUsernameChange(e.target.value)
-                        }
+                        onChange={(e) => {
+                          handleInlineProfileFieldChange(
+                            setEditUsername,
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9_.]/g, ""),
+                          );
+                          handleProfileUsernameChange(
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9_.]/g, ""),
+                          );
+                        }}
                         placeholder="your_handle"
+                        disabled={!isProfileEditing}
                       />
                     </div>
                     {profileUsernameError ? (
@@ -4646,24 +4681,46 @@ function Chat() {
                       type="text"
                       className="profile-input"
                       value={editBio}
-                      onChange={(e) => setEditBio(e.target.value)}
+                      onChange={(e) =>
+                        handleInlineProfileFieldChange(
+                          setEditBio,
+                          e.target.value,
+                        )
+                      }
                       placeholder="Hey there! I am using LoopChat."
+                      disabled={!isProfileEditing}
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="btn-create"
-                    style={{
-                      width: "100%",
-                      padding: "0.7rem",
-                      borderRadius: "10px",
-                      fontWeight: "600",
-                    }}
-                    disabled={isUpdatingProfile}
-                  >
-                    {isUpdatingProfile ? "Saving..." : "Save Profile"}
-                  </button>
+                  {!isProfileEditing ? (
+                    <button
+                      type="button"
+                      className="btn-create"
+                      style={{
+                        width: "100%",
+                        padding: "0.7rem",
+                        borderRadius: "10px",
+                        fontWeight: "600",
+                      }}
+                      onClick={startProfileEditing}
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="btn-create"
+                      style={{
+                        width: "100%",
+                        padding: "0.7rem",
+                        borderRadius: "10px",
+                        fontWeight: "600",
+                      }}
+                      disabled={isUpdatingProfile || !hasProfileChanges}
+                    >
+                      {isUpdatingProfile ? "Saving..." : "Save Profile"}
+                    </button>
+                  )}
                 </form>
 
                 <div
