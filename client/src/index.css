@@ -2806,8 +2806,16 @@ html:not([data-theme="dark"]) .item-msg {
   gap: 0.9rem;
   padding: 0.6rem 0.75rem;
   min-width: 240px;
-  background: #0f5ea6;
   border-radius: 4px;
+}
+
+/* DARK */
+.dark.sent {
+  background-color: #0f5ea6;
+}
+
+.dark.received {
+  background-color: #232424;
 }
 
 .missed-call-icon {

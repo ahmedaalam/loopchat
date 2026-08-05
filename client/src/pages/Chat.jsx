@@ -5148,7 +5148,9 @@ function Chat() {
                                   : "them";
                               return (
                                 <div
-                                  className="missed-call-card missed-call-card-clickable"
+                                  className={`missed-call-card missed-call-card-clickable ${
+                                    iMadethisCall ? "sent" : "received"
+                                  } ${isDark ? "dark" : "light"}`}
                                   onClick={() =>
                                     setCallBackModal({
                                       isVideoCall: msg.callInfo.isVideoCall,
