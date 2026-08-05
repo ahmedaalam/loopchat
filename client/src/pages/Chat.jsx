@@ -685,10 +685,12 @@ function GroupsTabIcon({ size = 22, color = "currentColor" }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <circle cx="12" cy="9" r="2.5" />
+      <path d="M6 20c0-2.5 3-4 6-4s6 1.5 6 4" />
+      <circle cx="7.5" cy="10" r="2" />
+      <path d="M3.5 19c0-1.8 2-3 4-3" />
+      <circle cx="16.5" cy="10" r="2" />
+      <path d="M20.5 19c0-1.8-2-3-4-3" />
     </svg>
   );
 }
@@ -866,17 +868,11 @@ function AttachmentView({
   if (!file || !file.url) return null;
   const fullUrl = `http://localhost:5000${file.url}`;
 
-  const handleDoubleClick = (e) => {
-    e.stopPropagation();
-    if (onToggleMenu) onToggleMenu();
-  };
-
   if (file.fileType === "image") {
     return (
       <div
         className="chat-media-image-wrapper"
         onClick={() => onOpenLightbox(file)}
-        onDoubleClick={handleDoubleClick}
       >
         <img
           src={fullUrl}
@@ -908,10 +904,7 @@ function AttachmentView({
 
   if (file.fileType === "video") {
     return (
-      <div
-        className="chat-media-video-wrapper"
-        onDoubleClick={handleDoubleClick}
-      >
+      <div className="chat-media-video-wrapper">
         <video src={fullUrl} controls className="chat-media-video" />
         {showTimeOverlay && (
           <div className="media-time-badge">
@@ -927,10 +920,7 @@ function AttachmentView({
 
   if (file.fileType === "audio") {
     return (
-      <div
-        className="chat-media-audio-wrapper"
-        onDoubleClick={handleDoubleClick}
-      >
+      <div className="chat-media-audio-wrapper">
         <audio src={fullUrl} controls className="chat-media-audio" />
         {showTimeOverlay && (
           <div className="media-time-badge inline-badge">
@@ -948,7 +938,6 @@ function AttachmentView({
   return (
     <div
       className={`chat-doc-card ${isSentByMe ? "sent-doc" : "received-doc"}`}
-      onDoubleClick={handleDoubleClick}
     >
       <div className="doc-icon-container">
         <FileTextIcon size={24} />
@@ -1086,7 +1075,7 @@ function Chat() {
   const [acceptedContacts, setAcceptedContacts] = useState([]);
   const [contactSearchQuery, setContactSearchQuery] = useState("");
 
-  // ─── Context Menus (double-click) ─────────────────────────────────────────
+  // ─── Context Menus ─────────────────────────────────────────
   const [chatCtxMenu, setChatCtxMenu] = useState(null); // { chatId, x, y }
   const [friendCtxMenu, setFriendCtxMenu] = useState(null); // { contactId, x, y }
   const [showFriendRequestsPanel, setShowFriendRequestsPanel] = useState(false);
@@ -1418,6 +1407,34 @@ function Chat() {
       setChats((prev) => prev.filter((c) => c._id !== chatId));
     };
 
+    const handleFriendRemoved = ({ removedUserId, chatId }) => {
+      if (!removedUserId) return;
+      const removedUserKey = removedUserId.toString();
+
+      setAcceptedContacts((prev) =>
+        prev.filter((contact) => contact._id.toString() !== removedUserKey),
+      );
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [removedUserKey]: { status: "none" },
+      }));
+      setChats((prev) =>
+        prev.filter(
+          (chat) =>
+            chat.isGroupChat ||
+            !chat.users.some(
+              (user) =>
+                (typeof user === "object" ? user._id : user).toString() ===
+                removedUserKey,
+            ),
+        ),
+      );
+      if (chatId && selectedChatRef.current?._id === chatId) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+    };
+
     const handleTyping = (room) => {
       if (selectedChatRef.current?._id === room) setIsTyping(true);
     };
@@ -1497,6 +1514,7 @@ function Chat() {
     socket.on("message deleted", handleMessageDeleted);
     socket.on("chat cleared", handleChatCleared);
     socket.on("chat deleted", handleChatDeleted);
+    socket.on("friend_removed", handleFriendRemoved);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
     socket.on("recording audio", handleRecordingAudio);
@@ -1568,6 +1586,7 @@ function Chat() {
       socket.off("message deleted", handleMessageDeleted);
       socket.off("chat cleared", handleChatCleared);
       socket.off("chat deleted", handleChatDeleted);
+      socket.off("friend_removed", handleFriendRemoved);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
       socket.off("recording audio", handleRecordingAudio);
@@ -2321,6 +2340,21 @@ function Chat() {
     if ((!newMessage.trim() && !pendingFile) || !selectedChat || !currentUser)
       return;
 
+    if (!selectedChat.isGroupChat) {
+      const recipient = getRecipient(selectedChat.users);
+      const isFriend =
+        !!recipient &&
+        (friendStatuses[recipient._id]?.status === "accepted" ||
+          acceptedContacts.some((contact) => contact._id === recipient._id));
+
+      if (!isFriend) {
+        alert(
+          `You are no longer friend with ${recipient?.name || "this user"}.`,
+        );
+        return;
+      }
+    }
+
     try {
       let uploadedFilePayload = null;
 
@@ -2739,6 +2773,17 @@ function Chat() {
     if (!chat) return "";
     if (chat.isGroupChat) return chat.chatName;
     return getRecipient(chat.users)?.name || "Unknown";
+  };
+
+  const isChatStillFriends = (chat) => {
+    if (!chat || chat.isGroupChat) return true;
+    const recipient = getRecipient(chat.users);
+    if (!recipient) return false;
+
+    const status = friendStatuses[recipient._id]?.status;
+    if (status === "accepted") return true;
+
+    return acceptedContacts.some((contact) => contact._id === recipient._id);
   };
 
   const getChatAvatarText = (chat) => {
@@ -3713,8 +3758,10 @@ function Chat() {
                           <li
                             key={chat._id}
                             className={`sidebar-item ${isSelected ? "active" : ""}`}
-                            onClick={() => handleSelectChat(chat)}
-                            onDoubleClick={(e) => openChatCtxMenu(e, chat._id)}
+                            onClick={(e) => {
+                              handleSelectChat(chat);
+                              openChatCtxMenu(e, chat._id);
+                            }}
                             onContextMenu={(e) => openChatCtxMenu(e, chat._id)}
                           >
                             <div
@@ -4214,10 +4261,12 @@ function Chat() {
                     <li
                       key={contact._id}
                       className="sidebar-item contact-list-item"
-                      onClick={() => handleSelectUser(contact._id)}
-                      onDoubleClick={(e) => openFriendCtxMenu(e, contact._id)}
+                      onClick={(e) => {
+                        handleSelectUser(contact._id);
+                        openFriendCtxMenu(e, contact._id);
+                      }}
                       onContextMenu={(e) => openFriendCtxMenu(e, contact._id)}
-                      title="Double-click or right-click for options"
+                      title="Click for options"
                     >
                       <div
                         className={`avatar ${isOnline ? "avatar-online" : ""}`}
@@ -4717,6 +4766,19 @@ function Chat() {
 
               {/* Messages pane */}
               <div className="messages-pane">
+                {!selectedChat.isGroupChat &&
+                  !isChatStillFriends(selectedChat) && (
+                    <div
+                      className="blocked-banner"
+                      style={{ margin: "0.75rem 1rem 0.5rem" }}
+                    >
+                      <span>
+                        You are no longer friend with{" "}
+                        {getRecipient(selectedChat.users)?.name || "this user"}.
+                      </span>
+                    </div>
+                  )}
+
                 {messages.map((msg, idx) => {
                   const senderId =
                     typeof msg.sender === "object"
@@ -4766,10 +4828,6 @@ function Chat() {
                       >
                         <div
                           className={`message-bubble ${hasMedia ? "has-media" : ""} ${isMediaOnly ? "media-only-bubble" : ""}`}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            setActiveMenuMsgId(isMenuOpen ? null : msg._id);
-                          }}
                         >
                           {/* WhatsApp-Style Chevron Action Menu Trigger */}
                           <button
@@ -5228,6 +5286,14 @@ function Chat() {
                 ) : contactInfoData?.isBlockedBy ? (
                   <div className="blocked-banner">
                     <span>You cannot send messages to this contact.</span>
+                  </div>
+                ) : !selectedChat.isGroupChat &&
+                  !isChatStillFriends(selectedChat) ? (
+                  <div className="blocked-banner">
+                    <span>
+                      You are no longer friend with{" "}
+                      {getRecipient(selectedChat.users)?.name || "this user"}.
+                    </span>
                   </div>
                 ) : (
                   <form onSubmit={handleSendMessage} className="input-form">
@@ -5744,7 +5810,7 @@ function Chat() {
           <span>{friendRequestToast.message}</span>
         </div>
       )}
-      {/* ===== CHAT CONTEXT MENU (double-click on chat list item) ===== */}
+      {/* ===== CHAT CONTEXT MENU (single-click on chat list item) ===== */}
       {chatCtxMenu && (
         <>
           {/* Backdrop to dismiss */}
@@ -5779,7 +5845,7 @@ function Chat() {
         </>
       )}
 
-      {/* ===== FRIEND CONTEXT MENU (double-click on friend list item) ===== */}
+      {/* ===== FRIEND CONTEXT MENU (single-click on friend list item) ===== */}
       {friendCtxMenu && (
         <>
           <div

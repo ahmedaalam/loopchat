@@ -57,6 +57,8 @@ const io = new Server(server, {
   },
 });
 
+app.set("io", io);
+
 // track online users (userId -> socketId)
 const onlineUsers = {};
 
@@ -122,7 +124,9 @@ io.on("connection", (socket) => {
   // message reaction broadcast
   socket.on("message reaction", ({ messageId, reactions, chatId }) => {
     if (chatId) {
-      socket.to(chatId).emit("message reaction updated", { messageId, reactions, chatId });
+      socket
+        .to(chatId)
+        .emit("message reaction updated", { messageId, reactions, chatId });
     }
   });
 
@@ -159,6 +163,12 @@ io.on("connection", (socket) => {
     io.to(senderId).emit("friend_request_declined", { requestId });
   });
 
+  socket.on("friend_removed", ({ userId, removedUserId, chatId }) => {
+    if (!userId || !removedUserId) return;
+    io.to(userId).emit("friend_removed", { removedUserId, chatId });
+    console.log(`👥 Friend removed: ${removedUserId} removed from ${userId}`);
+  });
+
   // ================= WEBRTC VOICE & VIDEO CALL SIGNALING =================
   const activeCalls = {};
 
@@ -188,42 +198,49 @@ io.on("connection", (socket) => {
 
       await Chat.findByIdAndUpdate(call.chatId, { latestMessage: msg });
       io.to(call.chatId).emit("receive message", msg);
-      console.log(`📞 Saved missed ${call.isVideoCall ? "video" : "voice"} call for chat ${call.chatId}`);
+      console.log(
+        `📞 Saved missed ${call.isVideoCall ? "video" : "voice"} call for chat ${call.chatId}`,
+      );
     } catch (err) {
       console.error("Error creating missed call message:", err);
     }
   };
 
-  socket.on("call user", ({ userToCall, offer, from, callerName, isVideoCall, chatId }) => {
-    console.log(`📞 Call user event received: from ${callerName} (${from}) to userToCall=${userToCall}, chatId=${chatId}, isVideoCall=${isVideoCall}`);
+  socket.on(
+    "call user",
+    ({ userToCall, offer, from, callerName, isVideoCall, chatId }) => {
+      console.log(
+        `📞 Call user event received: from ${callerName} (${from}) to userToCall=${userToCall}, chatId=${chatId}, isVideoCall=${isVideoCall}`,
+      );
 
-    if (from) {
-      activeCalls[from.toString()] = {
-        userToCall: userToCall ? userToCall.toString() : null,
-        from: from.toString(),
-        callerName,
-        isVideoCall: !!isVideoCall,
-        chatId: chatId ? chatId.toString() : null,
-        status: "ringing",
-      };
-    }
-
-    const payload = { offer, from, callerName, isVideoCall, chatId };
-
-    if (userToCall) {
-      const recipientStr = userToCall.toString();
-      io.to(recipientStr).emit("incoming call", payload);
-
-      const targetSocketId = onlineUsers[recipientStr];
-      if (targetSocketId) {
-        io.to(targetSocketId).emit("incoming call", payload);
+      if (from) {
+        activeCalls[from.toString()] = {
+          userToCall: userToCall ? userToCall.toString() : null,
+          from: from.toString(),
+          callerName,
+          isVideoCall: !!isVideoCall,
+          chatId: chatId ? chatId.toString() : null,
+          status: "ringing",
+        };
       }
-    }
 
-    if (chatId) {
-      socket.to(chatId).emit("incoming call", payload);
-    }
-  });
+      const payload = { offer, from, callerName, isVideoCall, chatId };
+
+      if (userToCall) {
+        const recipientStr = userToCall.toString();
+        io.to(recipientStr).emit("incoming call", payload);
+
+        const targetSocketId = onlineUsers[recipientStr];
+        if (targetSocketId) {
+          io.to(targetSocketId).emit("incoming call", payload);
+        }
+      }
+
+      if (chatId) {
+        socket.to(chatId).emit("incoming call", payload);
+      }
+    },
+  );
 
   socket.on("answer call", ({ to, answer }) => {
     const targetId = to ? to.toString() : null;
@@ -254,7 +271,7 @@ io.on("connection", (socket) => {
     }
 
     const callKey = Object.keys(activeCalls).find(
-      (k) => k === to || activeCalls[k].userToCall === to
+      (k) => k === to || activeCalls[k].userToCall === to,
     );
 
     if (callKey) {
@@ -274,7 +291,7 @@ io.on("connection", (socket) => {
     }
 
     const callKey = Object.keys(activeCalls).find(
-      (k) => k === to || activeCalls[k].userToCall === to
+      (k) => k === to || activeCalls[k].userToCall === to,
     );
 
     if (callKey) {

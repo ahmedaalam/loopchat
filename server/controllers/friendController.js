@@ -1,5 +1,6 @@
 const FriendRequest = require("../models/FriendRequest");
 const User = require("../models/User");
+const Chat = require("../models/Chat");
 
 // ─── Send a friend / contact request ─────────────────────────────────────────
 exports.sendRequest = async (req, res) => {
@@ -8,7 +9,9 @@ exports.sendRequest = async (req, res) => {
 
   try {
     if (senderId.toString() === receiverId.toString()) {
-      return res.status(400).json({ message: "You cannot send a request to yourself." });
+      return res
+        .status(400)
+        .json({ message: "You cannot send a request to yourself." });
     }
 
     const receiver = await User.findById(receiverId);
@@ -27,19 +30,30 @@ exports.sendRequest = async (req, res) => {
         return res.status(400).json({ message: "You are already connected." });
       }
       if (existing.status === "pending") {
-        return res.status(400).json({ message: "A request already exists between you two." });
+        return res
+          .status(400)
+          .json({ message: "A request already exists between you two." });
       }
       // Declined — allow re-sending by updating the existing doc
       existing.sender = senderId;
       existing.receiver = receiverId;
       existing.status = "pending";
       await existing.save();
-      const populated = await existing.populate("sender receiver", "name email avatar");
+      const populated = await existing.populate(
+        "sender receiver",
+        "name email avatar",
+      );
       return res.status(200).json(populated);
     }
 
-    const request = await FriendRequest.create({ sender: senderId, receiver: receiverId });
-    const populated = await request.populate("sender receiver", "name email avatar");
+    const request = await FriendRequest.create({
+      sender: senderId,
+      receiver: receiverId,
+    });
+    const populated = await request.populate(
+      "sender receiver",
+      "name email avatar",
+    );
     res.status(201).json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -52,7 +66,8 @@ exports.acceptRequest = async (req, res) => {
 
   try {
     const request = await FriendRequest.findById(requestId);
-    if (!request) return res.status(404).json({ message: "Request not found." });
+    if (!request)
+      return res.status(404).json({ message: "Request not found." });
     if (request.receiver.toString() !== req.user.toString()) {
       return res.status(403).json({ message: "Not authorized." });
     }
@@ -62,7 +77,10 @@ exports.acceptRequest = async (req, res) => {
 
     request.status = "accepted";
     await request.save();
-    const populated = await request.populate("sender receiver", "name email avatar");
+    const populated = await request.populate(
+      "sender receiver",
+      "name email avatar",
+    );
     res.json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -75,7 +93,8 @@ exports.declineRequest = async (req, res) => {
 
   try {
     const request = await FriendRequest.findById(requestId);
-    if (!request) return res.status(404).json({ message: "Request not found." });
+    if (!request)
+      return res.status(404).json({ message: "Request not found." });
     if (request.receiver.toString() !== req.user.toString()) {
       return res.status(403).json({ message: "Not authorized." });
     }
@@ -94,7 +113,8 @@ exports.cancelRequest = async (req, res) => {
 
   try {
     const request = await FriendRequest.findById(requestId);
-    if (!request) return res.status(404).json({ message: "Request not found." });
+    if (!request)
+      return res.status(404).json({ message: "Request not found." });
     if (request.sender.toString() !== req.user.toString()) {
       return res.status(403).json({ message: "Not authorized." });
     }
@@ -136,7 +156,7 @@ exports.getFriends = async (req, res) => {
       .populate("receiver", "name username email avatar bio");
 
     const friends = requests.map((r) =>
-      r.sender._id.toString() === req.user.toString() ? r.receiver : r.sender
+      r.sender._id.toString() === req.user.toString() ? r.receiver : r.sender,
     );
 
     res.json(friends);
@@ -157,7 +177,38 @@ exports.removeFriend = async (req, res) => {
       ],
     });
 
-    if (!deleted) return res.status(404).json({ message: "Friendship not found." });
+    if (!deleted)
+      return res.status(404).json({ message: "Friendship not found." });
+
+    const directChat = await Chat.findOne({
+      isGroupChat: false,
+      users: { $all: [req.user, userId] },
+    });
+
+    if (directChat) {
+      await Chat.findByIdAndDelete(directChat._id);
+    }
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(userId.toString()).emit("friend_removed", {
+        removedUserId: req.user.toString(),
+        chatId: directChat?._id?.toString(),
+      });
+      io.to(req.user.toString()).emit("friend_removed", {
+        removedUserId: userId.toString(),
+        chatId: directChat?._id?.toString(),
+      });
+      if (directChat) {
+        io.to(userId.toString()).emit("chat deleted", {
+          chatId: directChat._id.toString(),
+        });
+        io.to(req.user.toString()).emit("chat deleted", {
+          chatId: directChat._id.toString(),
+        });
+      }
+    }
+
     res.json({ message: "Friend removed.", userId });
   } catch (err) {
     res.status(500).json({ message: err.message });
