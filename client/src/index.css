@@ -3362,6 +3362,14 @@ html:not([data-theme="dark"]) .modal-input {
   background-color: #fafafa !important;
 }
 
+html:not([data-theme="dark"]) .ctx-menu-item:hover {
+  background: #f9f8f8;
+}
+
+html:not([data-theme="dark"]) .ctx-menu-item.ctx-menu-item-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
@@ -4282,7 +4290,7 @@ html[data-theme="dark"] .nav-rail-item.active {
 }
 
 .ctx-menu-item:hover {
-  background: var(--surface-2);
+  background: #1a1a1a;
 }
 
 .ctx-menu-item-danger {

@@ -3,7 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import LoopChatLogo from "../components/LoopChatLogo";
 import CallModal from "../components/CallModal";
-import { MinusCircle } from "lucide-react";
+import { UserMinusIcon, MinusCircle } from "lucide-react";
 
 const ENDPOINT = "http://localhost:5000";
 
@@ -685,12 +685,12 @@ function GroupsTabIcon({ size = 22, color = "currentColor" }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <circle cx="12" cy="9" r="2.5" />
-      <path d="M6 20c0-2.5 3-4 6-4s6 1.5 6 4" />
-      <circle cx="7.5" cy="10" r="2" />
-      <path d="M3.5 19c0-1.8 2-3 4-3" />
-      <circle cx="16.5" cy="10" r="2" />
-      <path d="M20.5 19c0-1.8-2-3-4-3" />
+      <circle cx="12" cy="8" r="3" />
+      <path d="M5 20c0-3 3-5 7-5s7 2 7 5" />
+      <circle cx="5" cy="10" r="2" />
+      <path d="M1 20c0-2 2-3.5 4-3.5" />
+      <circle cx="19" cy="10" r="2" />
+      <path d="M23 20c0-2-2-3.5-4-3.5" />
     </svg>
   );
 }
@@ -2130,6 +2130,40 @@ function Chat() {
   const openChatCtxMenu = (e, chatId) => {
     e.preventDefault();
     setChatCtxMenu({ chatId, x: e.clientX, y: e.clientY });
+  };
+
+  const longPressTimerRef = useRef(null);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startLongPressContextMenu = (event, type, id) => {
+    if (
+      event?.pointerType &&
+      event.pointerType !== "touch" &&
+      event.pointerType !== "pen"
+    ) {
+      return;
+    }
+
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      const point = event?.touches?.[0] || event?.changedTouches?.[0] || event;
+      const x = point?.clientX ?? window.innerWidth / 2;
+      const y = point?.clientY ?? window.innerHeight / 2;
+
+      if (type === "chat") {
+        setChatCtxMenu({ chatId: id, x, y });
+      } else {
+        setFriendCtxMenu({ contactId: id, x, y });
+      }
+
+      clearLongPressTimer();
+    }, 450);
   };
 
   const handleDeleteChatById = async (chatId) => {
@@ -3758,10 +3792,12 @@ function Chat() {
                           <li
                             key={chat._id}
                             className={`sidebar-item ${isSelected ? "active" : ""}`}
-                            onClick={(e) => {
-                              handleSelectChat(chat);
-                              openChatCtxMenu(e, chat._id);
-                            }}
+                            onClick={() => handleSelectChat(chat)}
+                            onPointerDown={(e) =>
+                              startLongPressContextMenu(e, "chat", chat._id)
+                            }
+                            onPointerUp={clearLongPressTimer}
+                            onPointerLeave={clearLongPressTimer}
                             onContextMenu={(e) => openChatCtxMenu(e, chat._id)}
                           >
                             <div
@@ -4261,10 +4297,12 @@ function Chat() {
                     <li
                       key={contact._id}
                       className="sidebar-item contact-list-item"
-                      onClick={(e) => {
-                        handleSelectUser(contact._id);
-                        openFriendCtxMenu(e, contact._id);
-                      }}
+                      onClick={() => handleSelectUser(contact._id)}
+                      onPointerDown={(e) =>
+                        startLongPressContextMenu(e, "friend", contact._id)
+                      }
+                      onPointerUp={clearLongPressTimer}
+                      onPointerLeave={clearLongPressTimer}
                       onContextMenu={(e) => openFriendCtxMenu(e, contact._id)}
                       title="Click for options"
                     >
@@ -5830,7 +5868,9 @@ function Chat() {
               className="ctx-menu-item"
               onClick={() => handleClearChatById(chatCtxMenu.chatId)}
             >
-              <span className="ctx-menu-icon">🧹</span>
+              <span className="ctx-menu-icon">
+                <MinusCircle size={14} />
+              </span>
               Clear Chat
             </button>
             <div className="ctx-menu-divider" />
@@ -5838,7 +5878,9 @@ function Chat() {
               className="ctx-menu-item ctx-menu-item-danger"
               onClick={() => handleDeleteChatById(chatCtxMenu.chatId)}
             >
-              <span className="ctx-menu-icon">🗑️</span>
+              <span className="ctx-menu-icon">
+                <TrashIcon size={14} />
+              </span>
               Delete Chat
             </button>
           </div>
@@ -5868,7 +5910,9 @@ function Chat() {
               className="ctx-menu-item ctx-menu-item-danger"
               onClick={() => handleRemoveContact(friendCtxMenu.contactId)}
             >
-              <span className="ctx-menu-icon">👤</span>
+              <span className="ctx-menu-icon">
+                <UserMinusIcon size={14} />
+              </span>
               Remove Friend
             </button>
           </div>
