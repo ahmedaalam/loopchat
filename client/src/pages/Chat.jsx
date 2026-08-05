@@ -1061,8 +1061,23 @@ function Chat() {
   const [editAvatar, setEditAvatar] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUsernameError, setProfileUsernameError] = useState("");
+  const [profileUsernameChecking, setProfileUsernameChecking] = useState(false);
+  const [profileUsernameAvailable, setProfileUsernameAvailable] =
+    useState(null);
   const [isProfileUsernameFocused, setIsProfileUsernameFocused] =
     useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.user) return;
+
+    setEditName(currentUser.user.name || "");
+    setEditUsername(currentUser.user.username || "");
+    setEditBio(currentUser.user.bio || "Hey there! I am using LoopChat.");
+    setEditAvatar(currentUser.user.avatar || "");
+    setProfileUsernameError("");
+    setProfileUsernameChecking(false);
+    setProfileUsernameAvailable(null);
+  }, [currentUser]);
 
   // Contact Info Modal & Blocking State
   const [showContactInfoModal, setShowContactInfoModal] = useState(false);
@@ -2460,6 +2475,44 @@ function Chat() {
     setShowProfileModal(true);
   };
 
+  const handleProfileUsernameChange = async (value) => {
+    const cleaned = value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+    setEditUsername(cleaned);
+    setProfileUsernameError("");
+    setProfileUsernameAvailable(null);
+
+    if (!cleaned) {
+      setProfileUsernameChecking(false);
+      return;
+    }
+
+    const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
+    if (!USERNAME_REGEX.test(cleaned)) {
+      setProfileUsernameChecking(false);
+      return;
+    }
+
+    setProfileUsernameChecking(true);
+    try {
+      const { data } = await axios.get(
+        `http://localhost:5000/api/users/check-username?username=${cleaned}`,
+      );
+
+      const isCurrentUsername =
+        currentUser?.user?.username && cleaned === currentUser.user.username;
+      const available = isCurrentUsername ? true : data.available;
+      setProfileUsernameAvailable(available);
+
+      if (!available) {
+        setProfileUsernameError("This username is already taken");
+      }
+    } catch {
+      setProfileUsernameAvailable(null);
+    } finally {
+      setProfileUsernameChecking(false);
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -2470,6 +2523,11 @@ function Chat() {
       setProfileUsernameError(
         "Username must be 3-20 characters: letters, numbers, _ or .",
       );
+      return;
+    }
+
+    if (editUsername && profileUsernameAvailable === false) {
+      setProfileUsernameError("This username is already taken");
       return;
     }
 
@@ -4499,23 +4557,18 @@ function Chat() {
                       <span className="profile-username-at">@</span>
                       <input
                         type="text"
-                        className={`profile-input profile-username-input ${profileUsernameError ? "profile-input-error" : ""}`}
+                        className={`profile-input profile-username-input ${profileUsernameError ? "profile-input-error" : profileUsernameAvailable === true ? "valid" : ""}`}
                         value={editUsername}
                         maxLength={20}
                         onFocus={() => setIsProfileUsernameFocused(true)}
                         onBlur={() => setIsProfileUsernameFocused(false)}
-                        onChange={(e) => {
-                          setEditUsername(
-                            e.target.value
-                              .toLowerCase()
-                              .replace(/[^a-z0-9_.]/g, ""),
-                          );
-                          setProfileUsernameError("");
-                        }}
+                        onChange={(e) =>
+                          handleProfileUsernameChange(e.target.value)
+                        }
                         placeholder="your_handle"
                       />
                     </div>
-                    {profileUsernameError && (
+                    {profileUsernameError ? (
                       <span
                         style={{
                           color: "#ef4444",
@@ -4526,8 +4579,51 @@ function Chat() {
                       >
                         {profileUsernameError}
                       </span>
-                    )}
-                    {isProfileUsernameFocused && !profileUsernameError && (
+                    ) : profileUsernameChecking ? (
+                      <span
+                        style={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.72rem",
+                          marginTop: "0.25rem",
+                          display: "block",
+                        }}
+                      >
+                        Checking availability...
+                      </span>
+                    ) : profileUsernameAvailable === true ? (
+                      <span
+                        style={{
+                          color: "#16a34a",
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          marginTop: "0.25rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          style={{
+                            display: "inline-block",
+                            verticalAlign: "-2px",
+                            marginRight: "6px",
+                          }}
+                        >
+                          <circle cx="12" cy="12" r="10" fill="#16a34a" />
+                          <path
+                            d="M9 12.5l2 2 4.5-4.5"
+                            stroke={isDark ? "#111111" : "#ffffff"}
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        Username is available
+                      </span>
+                    ) : isProfileUsernameFocused ? (
                       <span
                         style={{
                           color: "var(--text-muted)",
@@ -4538,7 +4634,7 @@ function Chat() {
                       >
                         3–20 characters · letters, numbers, _ and . only
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <div
