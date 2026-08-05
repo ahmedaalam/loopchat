@@ -4342,6 +4342,20 @@ html[data-theme="dark"] .nav-rail-item.active {
   margin: 4px 0;
 }
 
+.clear-call-logs-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
 [data-theme="dark"] .ctx-menu {
   box-shadow:
     0 8px 30px rgba(0, 0, 0, 0.45),

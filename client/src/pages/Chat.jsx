@@ -537,8 +537,6 @@ function formatBytes(bytes, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
-
-
 // ─── Web Audio notification beep (no audio file needed) ───────────────────────
 function playNotificationSound() {
   try {
@@ -1352,11 +1350,19 @@ function Chat() {
         }
         const updated = prev.map((c) =>
           c._id === receivedMsgChatId
-            ? { ...c, latestMessage: receivedMsg, updatedAt: new Date().toISOString() }
+            ? {
+                ...c,
+                latestMessage: receivedMsg,
+                updatedAt: new Date().toISOString(),
+              }
             : c,
         );
         return updated.sort((a, b) =>
-          a._id === receivedMsgChatId ? -1 : b._id === receivedMsgChatId ? 1 : 0,
+          a._id === receivedMsgChatId
+            ? -1
+            : b._id === receivedMsgChatId
+              ? 1
+              : 0,
         );
       });
 
@@ -3454,7 +3460,9 @@ function Chat() {
                     setActiveNavTab("calls");
                     // Clear missed call notifications when opening Calls history
                     setNotifications((prev) =>
-                      prev.filter((n) => !(n.callInfo?.isCall && n.callInfo?.isMissed)),
+                      prev.filter(
+                        (n) => !(n.callInfo?.isCall && n.callInfo?.isMissed),
+                      ),
                     );
                   }}
                   title="Calls History"
@@ -4087,12 +4095,24 @@ function Chat() {
                     className="clear-call-logs-btn"
                     onClick={async () => {
                       if (!currentUser) return;
-                      if (!window.confirm("Clear all call logs from your history?")) return;
+                      if (
+                        !window.confirm(
+                          "Clear all call logs from your history?",
+                        )
+                      )
+                        return;
                       try {
-                        await axios.delete("http://localhost:5000/api/message/calls/clear", {
-                          headers: { Authorization: `Bearer ${currentUser.token}` },
-                        });
-                        setMessages((prev) => prev.filter((m) => !m.callInfo?.isCall));
+                        await axios.delete(
+                          "http://localhost:5000/api/message/calls/clear",
+                          {
+                            headers: {
+                              Authorization: `Bearer ${currentUser.token}`,
+                            },
+                          },
+                        );
+                        setMessages((prev) =>
+                          prev.filter((m) => !m.callInfo?.isCall),
+                        );
                         setChats((prev) =>
                           prev.map((c) => {
                             if (c.latestMessage?.callInfo?.isCall) {
@@ -4101,7 +4121,9 @@ function Chat() {
                             return c;
                           }),
                         );
-                        setNotifications((prev) => prev.filter((n) => !n.callInfo?.isCall));
+                        setNotifications((prev) =>
+                          prev.filter((n) => !n.callInfo?.isCall),
+                        );
                         alert("Call logs cleared successfully.");
                       } catch (err) {
                         console.error("Error clearing call logs:", err);
@@ -4109,22 +4131,8 @@ function Chat() {
                       }
                     }}
                     title="Clear Call History"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid var(--border-color, #e0e0e0)",
-                      borderRadius: "8px",
-                      padding: "0.35rem 0.55rem",
-                      color: "#ef4444",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.25rem",
-                      fontSize: "0.8rem",
-                      fontWeight: "500",
-                    }}
                   >
-                    <TrashIcon size={14} color="#ef4444" />
-                    <span>Clear</span>
+                    <span>Clear call log</span>
                   </button>
                 </div>
               </div>
@@ -4216,11 +4224,17 @@ function Chat() {
 
                       let logLabel = "";
                       if (iMadeCall) {
-                        logLabel = isVideo ? "Outgoing video call" : "Outgoing voice call";
+                        logLabel = isVideo
+                          ? "Outgoing video call"
+                          : "Outgoing voice call";
                       } else if (isMissed) {
-                        logLabel = isVideo ? "Missed video call" : "Missed voice call";
+                        logLabel = isVideo
+                          ? "Missed video call"
+                          : "Missed voice call";
                       } else {
-                        logLabel = isVideo ? "Incoming video call" : "Incoming voice call";
+                        logLabel = isVideo
+                          ? "Incoming video call"
+                          : "Incoming voice call";
                       }
 
                       const isHighlightMissed = !iMadeCall && isMissed;
@@ -5239,7 +5253,8 @@ function Chat() {
                               const iMadethisCall =
                                 callSenderId === currentUser?.user?._id;
                               const isMissedCallMsg = !!msg.callInfo?.isMissed;
-                              const isVideoCallMsg = !!msg.callInfo?.isVideoCall;
+                              const isVideoCallMsg =
+                                !!msg.callInfo?.isVideoCall;
                               const callLabel = iMadethisCall
                                 ? isVideoCallMsg
                                   ? "Outgoing video call"
