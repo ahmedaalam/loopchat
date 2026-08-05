@@ -1701,11 +1701,32 @@ html:not([data-theme="dark"]) .item-msg {
   .chat-header {
     padding: 0.6rem 0.75rem;
   }
+  .chat-user-name {
+    font-size: 0.92rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sidebar-top {
+    padding: 0.75rem 0.85rem;
+  }
+  .clear-call-logs-btn {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+  .new-group-btn {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
   .missed-call-card {
     min-width: 0;
   }
   .modal-card {
     padding: 1.5rem 1rem;
+    max-width: 92vw;
   }
   .auth-card {
     padding: 1.5rem 1rem;

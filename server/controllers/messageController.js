@@ -227,3 +227,22 @@ exports.toggleReaction = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+// CLEAR all call log messages for logged-in user
+exports.clearCallLogs = async (req, res) => {
+  try {
+    const Chat = require("../models/Chat");
+    const userChats = await Chat.find({ users: req.user }).select("_id");
+    const chatIds = userChats.map((c) => c._id);
+
+    await Message.deleteMany({
+      chat: { $in: chatIds },
+      "callInfo.isCall": true,
+    });
+
+    return res.status(200).json({ message: "Call logs cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing call logs:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
