@@ -4061,19 +4061,72 @@ function Chat() {
             <>
               <div className="sidebar-top">
                 <h2 className="sidebar-tab-title">Calls</h2>
-                <button
-                  type="button"
-                  className="new-group-btn"
-                  onClick={() => setShowNewCallModal(true)}
+                <div
                   style={{
                     marginLeft: "auto",
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
-                    gap: "0.3rem",
+                    gap: "0.4rem",
                   }}
                 >
-                  <span>+ Call</span>
-                </button>
+                  <button
+                    type="button"
+                    className="new-group-btn"
+                    onClick={() => setShowNewCallModal(true)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                    }}
+                  >
+                    <span>+ Call</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="clear-call-logs-btn"
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      if (!window.confirm("Clear all call logs from your history?")) return;
+                      try {
+                        await axios.delete("http://localhost:5000/api/message/calls/clear", {
+                          headers: { Authorization: `Bearer ${currentUser.token}` },
+                        });
+                        setMessages((prev) => prev.filter((m) => !m.callInfo?.isCall));
+                        setChats((prev) =>
+                          prev.map((c) => {
+                            if (c.latestMessage?.callInfo?.isCall) {
+                              return { ...c, latestMessage: null };
+                            }
+                            return c;
+                          }),
+                        );
+                        setNotifications((prev) => prev.filter((n) => !n.callInfo?.isCall));
+                        alert("Call logs cleared successfully.");
+                      } catch (err) {
+                        console.error("Error clearing call logs:", err);
+                        alert("Failed to clear call logs.");
+                      }
+                    }}
+                    title="Clear Call History"
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--border-color, #e0e0e0)",
+                      borderRadius: "8px",
+                      padding: "0.35rem 0.55rem",
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      fontSize: "0.8rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    <TrashIcon size={14} color="#ef4444" />
+                    <span>Clear</span>
+                  </button>
+                </div>
               </div>
 
               <div className="sidebar-search">
@@ -4119,6 +4172,13 @@ function Chat() {
                         }
                       }
                     });
+
+                    // Sort call logs descending: newest calls at top, older calls below
+                    logs.sort(
+                      (a, b) =>
+                        new Date(b.msg.createdAt || 0) -
+                        new Date(a.msg.createdAt || 0),
+                    );
 
                     const filteredLogs = logs.filter((item) => {
                       if (!callsSearchQuery.trim()) return true;
