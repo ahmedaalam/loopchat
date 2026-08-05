@@ -57,6 +57,10 @@ exports.sendMessage = async (req, res) => {
   });
 
   message = await message.populate("sender", "name email avatar bio");
+  message = await message.populate({
+    path: "chat",
+    populate: { path: "users", select: "name email avatar" },
+  });
   if (message.replyTo) {
     message = await message.populate({
       path: "replyTo",

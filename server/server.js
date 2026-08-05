@@ -98,12 +98,31 @@ io.on("connection", (socket) => {
     socket.to(room).emit("stop recording audio", room);
   });
 
-  // send message to others in room
+  // send message to others in room & direct to participants
   socket.on("send message", (data) => {
     // data should contain { chat, sender, content, ... }
-    const chatId = data.chat;
+    const chatId =
+      data && typeof data.chat === "object" ? data.chat?._id : data?.chat;
+    const senderId =
+      data && typeof data.sender === "object"
+        ? data.sender?._id?.toString()
+        : data?.sender?.toString();
+
     if (chatId) {
       socket.to(chatId).emit("receive message", data);
+    }
+    if (
+      data &&
+      data.chat &&
+      typeof data.chat === "object" &&
+      Array.isArray(data.chat.users)
+    ) {
+      data.chat.users.forEach((u) => {
+        const uId = typeof u === "object" ? u._id?.toString() : u?.toString();
+        if (uId && uId !== senderId) {
+          io.to(uId).emit("receive message", data);
+        }
+      });
     }
   });
 
@@ -201,10 +220,23 @@ io.on("connection", (socket) => {
       });
 
       msg = await msg.populate("sender", "name avatar email");
-      msg = await msg.populate("chat");
+      msg = await msg.populate({
+        path: "chat",
+        populate: { path: "users", select: "name avatar email" },
+      });
 
       await Chat.findByIdAndUpdate(call.chatId, { latestMessage: msg });
       io.to(call.chatId).emit("receive message", msg);
+
+      if (msg.chat && Array.isArray(msg.chat.users)) {
+        msg.chat.users.forEach((u) => {
+          const uId = typeof u === "object" ? u._id?.toString() : u?.toString();
+          if (uId) {
+            io.to(uId).emit("receive message", msg);
+          }
+        });
+      }
+
       console.log(
         `📞 Saved ${isMissed ? "missed" : "completed"} ${call.isVideoCall ? "video" : "voice"} call for chat ${call.chatId}`,
       );

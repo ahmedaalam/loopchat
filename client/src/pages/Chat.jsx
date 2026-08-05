@@ -1253,6 +1253,15 @@ function Chat() {
     return () => socketInstance.disconnect();
   }, [currentUser]);
 
+  // Join all chat rooms for real-time message & call events
+  useEffect(() => {
+    if (socket && chats.length > 0) {
+      chats.forEach((c) => {
+        if (c._id) socket.emit("join chat", c._id);
+      });
+    }
+  }, [socket, chats]);
+
   // Fetch pending friend requests & accepted contacts when user logs in
   useEffect(() => {
     if (currentUser) {
@@ -1311,7 +1320,11 @@ function Chat() {
     const handleReceivedMessage = (receivedMsg) => {
       const activeChat = selectedChatRef.current;
       const isTabVisible = document.visibilityState === "visible";
-      const isActiveChat = activeChat && activeChat._id === receivedMsg.chat;
+      const receivedMsgChatId =
+        typeof receivedMsg.chat === "object"
+          ? receivedMsg.chat._id
+          : receivedMsg.chat;
+      const isActiveChat = activeChat && activeChat._id === receivedMsgChatId;
       const senderId =
         typeof receivedMsg.sender === "object"
           ? receivedMsg.sender?._id
@@ -1319,8 +1332,11 @@ function Chat() {
       const isFromMe = senderId === currentUser?.user?._id;
 
       if (isActiveChat) {
-        setMessages((prev) => [...prev, receivedMsg]);
-        markChatAsRead(receivedMsg.chat);
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === receivedMsg._id)) return prev;
+          return [...prev, receivedMsg];
+        });
+        markChatAsRead(receivedMsgChatId);
       } else if (!isFromMe) {
         setNotifications((prev) => {
           if (prev.some((n) => n._id === receivedMsg._id)) return prev;
@@ -1329,11 +1345,18 @@ function Chat() {
       }
 
       setChats((prev) => {
+        const chatExists = prev.some((c) => c._id === receivedMsgChatId);
+        if (!chatExists) {
+          if (currentUser?.token) fetchChats(currentUser.token);
+          return prev;
+        }
         const updated = prev.map((c) =>
-          c._id === receivedMsg.chat ? { ...c, latestMessage: receivedMsg } : c,
+          c._id === receivedMsgChatId
+            ? { ...c, latestMessage: receivedMsg, updatedAt: new Date().toISOString() }
+            : c,
         );
         return updated.sort((a, b) =>
-          a._id === receivedMsg.chat ? -1 : b._id === receivedMsg.chat ? 1 : 0,
+          a._id === receivedMsgChatId ? -1 : b._id === receivedMsgChatId ? 1 : 0,
         );
       });
 
@@ -1936,6 +1959,11 @@ function Chat() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setChats(data);
+      if (socket) {
+        data.forEach((c) => {
+          if (c._id) socket.emit("join chat", c._id);
+        });
+      }
     } catch (err) {
       console.error("Error fetching chats:", err);
     }
@@ -3412,14 +3440,32 @@ function Chat() {
               )}
             </button>
 
-            <button
-              type="button"
-              className={`nav-rail-item ${activeNavTab === "calls" ? "active" : ""}`}
-              onClick={() => setActiveNavTab("calls")}
-              title="Calls History"
-            >
-              <CallsTabIcon size={22} />
-            </button>
+            {(() => {
+              const missedCallsCount = notifications.filter(
+                (n) => n.callInfo?.isCall && n.callInfo?.isMissed,
+              ).length;
+              return (
+                <button
+                  type="button"
+                  className={`nav-rail-item ${activeNavTab === "calls" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveNavTab("calls");
+                    // Clear missed call notifications when opening Calls history
+                    setNotifications((prev) =>
+                      prev.filter((n) => !(n.callInfo?.isCall && n.callInfo?.isMissed)),
+                    );
+                  }}
+                  title="Calls History"
+                >
+                  <CallsTabIcon size={22} />
+                  {missedCallsCount > 0 && (
+                    <span className="nav-rail-badge nav-rail-badge-danger">
+                      {missedCallsCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })()}
 
             <button
               type="button"
