@@ -537,23 +537,7 @@ function formatBytes(bytes, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
-// ─── Sidebar Message Preview Helper ──────────────────────────────────────────
-function getSidebarMessageContent(message) {
-  if (!message) return "";
-  if (message.callInfo && message.callInfo.isCall) {
-    return message.callInfo.isVideoCall
-      ? "↙ Missed video call"
-      : "↙ Missed voice call";
-  }
-  if (message.content) return message.content;
-  if (message.file) {
-    if (message.file.fileType === "image") return "📷 Photo";
-    if (message.file.fileType === "video") return "📹 Video";
-    if (message.file.fileType === "audio") return "🎤 Voice note";
-    return `📄 ${message.file.fileName || "File"}`;
-  }
-  return "Message";
-}
+
 
 // ─── Web Audio notification beep (no audio file needed) ───────────────────────
 function playNotificationSound() {
@@ -1328,11 +1312,16 @@ function Chat() {
       const activeChat = selectedChatRef.current;
       const isTabVisible = document.visibilityState === "visible";
       const isActiveChat = activeChat && activeChat._id === receivedMsg.chat;
+      const senderId =
+        typeof receivedMsg.sender === "object"
+          ? receivedMsg.sender?._id
+          : receivedMsg.sender;
+      const isFromMe = senderId === currentUser?.user?._id;
 
       if (isActiveChat) {
         setMessages((prev) => [...prev, receivedMsg]);
         markChatAsRead(receivedMsg.chat);
-      } else {
+      } else if (!isFromMe) {
         setNotifications((prev) => {
           if (prev.some((n) => n._id === receivedMsg._id)) return prev;
           return [...prev, receivedMsg];
@@ -1348,7 +1337,7 @@ function Chat() {
         );
       });
 
-      if (!isTabVisible || !isActiveChat) {
+      if (!isFromMe && (!isTabVisible || !isActiveChat)) {
         playNotificationSound();
         const sender = receivedMsg.sender;
         const senderName = typeof sender === "object" ? sender.name : "Someone";
@@ -2998,28 +2987,28 @@ function Chat() {
   const getSidebarMessageContent = (msg) => {
     if (!msg) return "No messages yet";
     if (msg.callInfo?.isCall) {
-      const isMeSender =
-        (typeof msg.sender === "object" ? msg.sender._id : msg.sender) ===
-        currentUser?.user?._id;
-      if (msg.callInfo.isVideoCall) {
-        return (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.3rem",
-            }}
-          >
-            <FilledVideoIcon
-              size={16}
-              color={isMeSender ? (isDark ? "#a5a5a5" : "#626262") : "#ef4444"}
-            />
-            <span style={{ color: isDark ? "#a5a5a5" : "#626262" }}>
-              {isMeSender ? "Video call" : "Missed video call"}
-            </span>
-          </span>
-        );
+      const senderId =
+        typeof msg.sender === "object" ? msg.sender._id : msg.sender;
+      const isMeSender = senderId === currentUser?.user?._id;
+      const isMissed = !!msg.callInfo.isMissed;
+      const isVideo = !!msg.callInfo.isVideoCall;
+
+      let callLabel = "";
+      if (isMeSender) {
+        callLabel = isVideo ? "Outgoing video call" : "Outgoing voice call";
+      } else if (isMissed) {
+        callLabel = isVideo ? "Missed video call" : "Missed voice call";
+      } else {
+        callLabel = isVideo ? "Incoming video call" : "Incoming voice call";
       }
+
+      const isHighlightMissed = !isMeSender && isMissed;
+      const color = isHighlightMissed
+        ? "#ef4444"
+        : isDark
+          ? "#a5a5a5"
+          : "#626262";
+
       return (
         <span
           style={{
@@ -3028,13 +3017,12 @@ function Chat() {
             gap: "0.3rem",
           }}
         >
-          <FilledPhoneIcon
-            size={16}
-            color={isMeSender ? (isDark ? "#a5a5a5" : "#626262") : "#ef4444"}
-          />
-          <span style={{ color: isDark ? "#a5a5a5" : "#626262" }}>
-            {isMeSender ? "Voice call" : "Missed voice call"}
-          </span>
+          {isVideo ? (
+            <FilledVideoIcon size={14} color={color} />
+          ) : (
+            <FilledPhoneIcon size={14} color={color} />
+          )}
+          <span style={{ color }}>{callLabel}</span>
         </span>
       );
     }
@@ -4115,6 +4103,24 @@ function Chat() {
                           ? msg.sender._id
                           : msg.sender;
                       const iMadeCall = callSenderId === currentUser?.user?._id;
+                      const isMissed = !!msg.callInfo?.isMissed;
+                      const isVideo = !!msg.callInfo?.isVideoCall;
+
+                      let logLabel = "";
+                      if (iMadeCall) {
+                        logLabel = isVideo ? "Outgoing video call" : "Outgoing voice call";
+                      } else if (isMissed) {
+                        logLabel = isVideo ? "Missed video call" : "Missed voice call";
+                      } else {
+                        logLabel = isVideo ? "Incoming video call" : "Incoming voice call";
+                      }
+
+                      const isHighlightMissed = !iMadeCall && isMissed;
+                      const iconColor = isHighlightMissed
+                        ? "#ef4444"
+                        : isDark
+                          ? "#a5a5a5"
+                          : "#626262";
 
                       return (
                         <li
@@ -4140,36 +4146,23 @@ function Chat() {
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: "0.35rem",
-                                  color:
-                                    !iMadeCall && msg.callInfo?.isMissed
-                                      ? "#ef4444"
-                                      : "var(--text-2)",
+                                  color: isHighlightMissed
+                                    ? "#ef4444"
+                                    : "var(--text-2)",
                                 }}
                               >
-                                {msg.callInfo?.isVideoCall ? (
+                                {isVideo ? (
                                   <FilledVideoIcon
                                     size={16}
-                                    color={
-                                      !iMadeCall && msg.callInfo?.isMissed
-                                        ? "#ef4444"
-                                        : isDark
-                                          ? "#a5a5a5"
-                                          : "#626262"
-                                    }
+                                    color={iconColor}
                                   />
                                 ) : (
                                   <FilledPhoneIcon
                                     size={16}
-                                    color={
-                                      !iMadeCall && msg.callInfo?.isMissed
-                                        ? "#ef4444"
-                                        : isDark
-                                          ? "#a5a5a5"
-                                          : "#626262"
-                                    }
+                                    color={iconColor}
                                   />
                                 )}
-                                {iMadeCall ? "Outgoing" : "Missed"}
+                                {logLabel}
                               </span>
                             </div>
                           </div>
@@ -5137,13 +5130,19 @@ function Chat() {
                                   : msg.sender;
                               const iMadethisCall =
                                 callSenderId === currentUser?.user?._id;
+                              const isMissedCallMsg = !!msg.callInfo?.isMissed;
+                              const isVideoCallMsg = !!msg.callInfo?.isVideoCall;
                               const callLabel = iMadethisCall
-                                ? msg.callInfo.isVideoCall
-                                  ? "Video call"
-                                  : "Voice call"
-                                : msg.callInfo.isVideoCall
-                                  ? "Missed video call"
-                                  : "Missed voice call";
+                                ? isVideoCallMsg
+                                  ? "Outgoing video call"
+                                  : "Outgoing voice call"
+                                : isMissedCallMsg
+                                  ? isVideoCallMsg
+                                    ? "Missed video call"
+                                    : "Missed voice call"
+                                  : isVideoCallMsg
+                                    ? "Incoming video call"
+                                    : "Incoming voice call";
                               const senderNameForBack =
                                 typeof msg.sender === "object"
                                   ? msg.sender.name

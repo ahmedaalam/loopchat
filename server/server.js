@@ -172,24 +172,31 @@ io.on("connection", (socket) => {
   // ================= WEBRTC VOICE & VIDEO CALL SIGNALING =================
   const activeCalls = {};
 
-  const saveMissedCallRecord = async (call) => {
-    if (!call || !call.chatId || call.hasSavedMissedMsg) return;
-    call.hasSavedMissedMsg = true;
+  const saveCallRecord = async (call, isMissed = false, duration = 0) => {
+    if (!call || !call.chatId || call.hasSavedCallMsg) return;
+    call.hasSavedCallMsg = true;
 
     try {
       const Message = require("./models/Message");
       const Chat = require("./models/Chat");
 
+      let content = "";
+      if (isMissed) {
+        content = call.isVideoCall ? "Missed video call" : "Missed voice call";
+      } else {
+        content = call.isVideoCall ? "Video call" : "Voice call";
+      }
+
       let msg = await Message.create({
         sender: call.from,
-        content: call.isVideoCall ? "Missed video call" : "Missed voice call",
+        content,
         chat: call.chatId,
         readBy: [call.from],
         callInfo: {
           isCall: true,
           isVideoCall: !!call.isVideoCall,
-          isMissed: true,
-          duration: 0,
+          isMissed: !!isMissed,
+          duration: duration || 0,
         },
       });
 
@@ -199,10 +206,10 @@ io.on("connection", (socket) => {
       await Chat.findByIdAndUpdate(call.chatId, { latestMessage: msg });
       io.to(call.chatId).emit("receive message", msg);
       console.log(
-        `📞 Saved missed ${call.isVideoCall ? "video" : "voice"} call for chat ${call.chatId}`,
+        `📞 Saved ${isMissed ? "missed" : "completed"} ${call.isVideoCall ? "video" : "voice"} call for chat ${call.chatId}`,
       );
     } catch (err) {
-      console.error("Error creating missed call message:", err);
+      console.error("Error creating call record message:", err);
     }
   };
 
@@ -252,6 +259,7 @@ io.on("connection", (socket) => {
     for (const key of Object.keys(activeCalls)) {
       if (key === to || activeCalls[key].userToCall === to) {
         activeCalls[key].status = "connected";
+        activeCalls[key].connectedTime = Date.now();
       }
     }
   });
@@ -277,13 +285,13 @@ io.on("connection", (socket) => {
     if (callKey) {
       const call = activeCalls[callKey];
       delete activeCalls[callKey];
-      if (call && call.status === "ringing") {
-        await saveMissedCallRecord(call);
+      if (call) {
+        await saveCallRecord(call, true, 0);
       }
     }
   });
 
-  socket.on("end call", async ({ to }) => {
+  socket.on("end call", async ({ to, duration }) => {
     const targetId = to ? to.toString() : null;
     if (targetId) {
       io.to(targetId).emit("call ended");
@@ -297,8 +305,13 @@ io.on("connection", (socket) => {
     if (callKey) {
       const call = activeCalls[callKey];
       delete activeCalls[callKey];
-      if (call && call.status === "ringing") {
-        await saveMissedCallRecord(call);
+      if (call) {
+        const isMissed = call.status === "ringing";
+        let callDuration = duration || 0;
+        if (!isMissed && call.connectedTime) {
+          callDuration = Math.round((Date.now() - call.connectedTime) / 1000);
+        }
+        await saveCallRecord(call, isMissed, callDuration);
       }
     }
   });
@@ -313,6 +326,28 @@ io.on("connection", (socket) => {
       }
     }
     if (disconnectedUserId) {
+      for (const callKey of Object.keys(activeCalls)) {
+        const call = activeCalls[callKey];
+        if (
+          call &&
+          (call.from === disconnectedUserId ||
+            call.userToCall === disconnectedUserId)
+        ) {
+          delete activeCalls[callKey];
+          const isMissed = call.status === "ringing";
+          let callDuration = 0;
+          if (!isMissed && call.connectedTime) {
+            callDuration = Math.round((Date.now() - call.connectedTime) / 1000);
+          }
+          await saveCallRecord(call, isMissed, callDuration);
+          const peerId =
+            call.from === disconnectedUserId ? call.userToCall : call.from;
+          if (peerId) {
+            io.to(peerId).emit("call ended");
+          }
+        }
+      }
+
       try {
         const User = require("./models/User");
         const lastSeen = new Date();
