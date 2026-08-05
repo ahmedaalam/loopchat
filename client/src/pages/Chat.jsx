@@ -3032,7 +3032,7 @@ function Chat() {
             size={16}
             color={isMeSender ? (isDark ? "#a5a5a5" : "#626262") : "#ef4444"}
           />
-          <span style={{ color: isDark ? "#626262" : "#a5a5a5" }}>
+          <span style={{ color: isDark ? "#a5a5a5" : "#626262" }}>
             {isMeSender ? "Voice call" : "Missed voice call"}
           </span>
         </span>
