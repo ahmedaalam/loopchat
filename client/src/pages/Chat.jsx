@@ -1411,6 +1411,8 @@ function Chat() {
         setMessages((prev) => prev.filter((m) => m._id !== messageId));
       }
 
+      setNotifications((prev) => prev.filter((n) => n._id !== messageId));
+
       setChats((prev) =>
         prev.map((c) => {
           if (c._id === chatId && c.latestMessage?._id === messageId) {

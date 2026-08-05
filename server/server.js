@@ -129,37 +129,39 @@ io.on("connection", (socket) => {
   // read receipts
   socket.on("read messages", ({ chatId, readerId }) => {
     if (chatId) {
-      socket.to(chatId).emit("messages read", { chatId, readerId });
+      io.to(chatId).emit("messages read", { chatId, readerId });
     }
   });
 
   // delete message broadcast
   socket.on("delete message", ({ messageId, chatId }) => {
     if (chatId) {
-      socket.to(chatId).emit("message deleted", { messageId, chatId });
+      io.to(chatId).emit("message deleted", { messageId, chatId });
     }
   });
 
   // message reaction broadcast
   socket.on("message reaction", ({ messageId, reactions, chatId }) => {
     if (chatId) {
-      socket
-        .to(chatId)
-        .emit("message reaction updated", { messageId, reactions, chatId });
+      io.to(chatId).emit("message reaction updated", {
+        messageId,
+        reactions,
+        chatId,
+      });
     }
   });
 
   // clear chat broadcast
   socket.on("clear chat", ({ chatId }) => {
     if (chatId) {
-      socket.to(chatId).emit("chat cleared", { chatId });
+      io.to(chatId).emit("chat cleared", { chatId });
     }
   });
 
   // delete chat broadcast
   socket.on("delete chat", ({ chatId }) => {
     if (chatId) {
-      socket.to(chatId).emit("chat deleted", { chatId });
+      io.to(chatId).emit("chat deleted", { chatId });
     }
   });
 
