@@ -3550,7 +3550,9 @@ function Chat() {
                                   </div>
                                   <div
                                     className="item-msg"
-                                    style={{ fontSize: "0.75rem" }}
+                                    style={{
+                                      fontSize: "0.75rem",
+                                    }}
                                   >
                                     {req.sender?.email}
                                   </div>
@@ -5739,7 +5741,7 @@ function Chat() {
                 {renderUserAvatar(contactInfoData, 90)}
               </div>
               <h2 className="contact-name">{contactInfoData.name}</h2>
-              <p className="contact-email">{contactInfoData.email}</p>
+              <p className="contact-email">@{contactInfoData.username}</p>
 
               <div className="contact-detail-box">
                 <span className="contact-detail-title">About / Bio</span>

@@ -3375,7 +3375,15 @@ html:not([data-theme="dark"]) .ctx-menu-item:hover {
 }
 
 html:not([data-theme="dark"]) .ctx-menu-item.ctx-menu-item-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+html:not([data-theme="dark"]) .close-modal-btn {
+  color: #0a0a0a !important;
+}
+
+html:not([data-theme="dark"]) .close-modal-btn:hover {
+  background-color: #f9f8f8 !important;
 }
 
 /* ==========================================================================
