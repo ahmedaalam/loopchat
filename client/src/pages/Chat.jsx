@@ -5265,8 +5265,8 @@ function Chat() {
                                 !!msg.callInfo?.isVideoCall;
                               const callLabel = iMadethisCall
                                 ? isVideoCallMsg
-                                  ? "Outgoing video call"
-                                  : "Outgoing voice call"
+                                  ? "Video call"
+                                  : "Voice call"
                                 : isMissedCallMsg
                                   ? isVideoCallMsg
                                     ? "Missed video call"
