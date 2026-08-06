@@ -908,7 +908,7 @@ function AttachmentView({
         <audio src={fullUrl} controls className="chat-media-audio" />
         {showTimeOverlay && (
           <div className="media-time-badge inline-badge">
-            <span>{timeText}</span>
+            <span className="time-text-inline">{timeText}</span>
             {isSentByMe && !isGroupChat && (
               <TickIcon tickState={tickState} size={9} />
             )}

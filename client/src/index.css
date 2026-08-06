@@ -3525,6 +3525,14 @@ html:not([data-theme="dark"]) .reply-preview-bar {
   border-color: #0078d4 !important;
 }
 
+html:not([data-theme="dark"]) .media-time-badge.inline-badge {
+  background-color: #ffffff !important;
+}
+
+html:not([data-theme="dark"]) .time-text-inline {
+  color: #626262 !important;
+}
+
 /* ==========================================================================
    USER PROFILES, INLINE REPLIES, CONTACT BLOCKING & PRESENCE STYLES
    ========================================================================== */
