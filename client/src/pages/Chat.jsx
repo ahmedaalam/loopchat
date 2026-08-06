@@ -2614,19 +2614,58 @@ function Chat() {
 
   const handleAvatarFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file || !currentUser) return;
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const { data } = await axios.post(
+      // 1. Upload image file to server
+      const { data: uploadData } = await axios.post(
         "http://localhost:5000/api/upload",
         formData,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
-      setEditAvatar(data.url);
+
+      const newAvatarUrl = uploadData.url;
+      setEditAvatar(newAvatarUrl);
+
+      // 2. Immediately persist avatar to database profile
+      const { data: updatedProfile } = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        { avatar: newAvatarUrl },
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+
+      // 3. Immediately persist avatar in state & localStorage
+      const updatedUser = { ...currentUser, user: updatedProfile };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      showToast("Profile picture updated and saved!");
     } catch (err) {
-      console.error("Error uploading avatar:", err);
-      alert("Failed to upload image");
+      console.error("Error uploading/saving avatar:", err);
+      showToast("Failed to upload/save profile picture.");
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!currentUser) return;
+    if (!window.confirm("Remove your profile picture?")) return;
+    try {
+      // 1. Persist empty avatar in database
+      const { data: updatedProfile } = await axios.put(
+        "http://localhost:5000/api/users/profile",
+        { avatar: "" },
+        { headers: { Authorization: `Bearer ${currentUser.token}` } },
+      );
+
+      setEditAvatar("");
+      // 2. Persist empty avatar in state & localStorage
+      const updatedUser = { ...currentUser, user: updatedProfile };
+      setCurrentUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      showToast("Profile picture removed.");
+    } catch (err) {
+      console.error("Error removing avatar:", err);
+      showToast("Failed to remove profile picture.");
     }
   };
 
@@ -4644,7 +4683,7 @@ function Chat() {
                 >
                   <div
                     className="profile-avatar-wrapper"
-                    style={{ margin: "0 auto 1.2rem auto" }}
+                    style={{ margin: "0 auto 1.2rem auto", position: "relative" }}
                   >
                     {editAvatar ? (
                       <img
@@ -4662,18 +4701,30 @@ function Chat() {
                           "?"}
                       </div>
                     )}
-                    <label
-                      className="profile-avatar-edit-label"
-                      title="Change photo"
-                    >
-                      <CameraIcon size={16} color="#fff" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarFileUpload}
-                        style={{ display: "none" }}
-                      />
-                    </label>
+                    <div className="profile-avatar-actions-row">
+                      <label
+                        className="profile-avatar-edit-label"
+                        title="Change photo"
+                      >
+                        <CameraIcon size={16} color="#fff" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarFileUpload}
+                          style={{ display: "none" }}
+                        />
+                      </label>
+                      {editAvatar && (
+                        <button
+                          type="button"
+                          className="profile-avatar-remove-btn"
+                          onClick={handleRemoveAvatar}
+                          title="Remove photo"
+                        >
+                          <TrashIcon size={14} color="#fff" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div

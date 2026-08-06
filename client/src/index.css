@@ -4500,3 +4500,31 @@ html[data-theme="dark"] .nav-rail-item.active {
     0 8px 30px rgba(0, 0, 0, 0.45),
     0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
+.profile-avatar-actions-row {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.profile-avatar-remove-btn {
+  background: #ef4444;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.profile-avatar-remove-btn:hover {
+  transform: scale(1.08);
+  background: #dc2626;
+}
