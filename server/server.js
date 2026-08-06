@@ -19,14 +19,24 @@ const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const friendRoutes = require("./routes/friendRoutes");
+const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 
 const app = express();
 
 // ✅ connect database
 connectDB();
 
-// middlewares
-app.use(cors());
+// Dynamic CORS configuration
+const allowedOrigins = process.env.CLIENT_URL
+  ? [process.env.CLIENT_URL, "http://localhost:5173", "http://localhost:3000"]
+  : "*";
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Serve static uploads
@@ -34,7 +44,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // test route
 app.get("/", (req, res) => {
-  res.send("LoopChat API is running...");
+  res.json({ message: "LoopChat API is running smoothly..." });
 });
 
 // routes
@@ -45,6 +55,10 @@ app.use("/api/message", messageRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/friends", friendRoutes);
 
+// Error Middlewares
+app.use(notFound);
+app.use(errorHandler);
+
 // ================= SOCKET.IO SETUP =================
 
 // create HTTP server
@@ -53,7 +67,8 @@ const server = http.createServer(app);
 // attach socket.io
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
   },
 });
 

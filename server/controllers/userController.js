@@ -5,11 +5,14 @@ const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
 // Get or search all users except current logged-in user
 exports.getAllUsers = async (req, res) => {
   try {
-    const keyword = req.query.search
+    const rawSearch = req.query.search ? String(req.query.search).trim() : "";
+    const sanitizedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    
+    const keyword = sanitizedSearch
       ? {
           $or: [
-            { name: { $regex: req.query.search, $options: "i" } },
-            { username: { $regex: req.query.search.replace(/^@/, ""), $options: "i" } },
+            { name: { $regex: sanitizedSearch, $options: "i" } },
+            { username: { $regex: sanitizedSearch.replace(/^@/, ""), $options: "i" } },
           ],
         }
       : {};

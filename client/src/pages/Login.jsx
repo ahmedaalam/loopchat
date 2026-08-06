@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import LoopChatLogo from "../components/LoopChatLogo";
 import OTPVerification from "../components/OTPVerification";
+import { ENDPOINT } from "../config";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -114,7 +115,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/login", {
+      const { data } = await axios.post(`${ENDPOINT}/api/auth/login`, {
         email: trimmedEmail,
         password,
       });
@@ -147,7 +148,7 @@ function Login() {
     setLoading(true);
 
     try {
-      await axios.post("http://localhost:5000/api/auth/forgot-password", {
+      await axios.post(`${ENDPOINT}/api/auth/forgot-password`, {
         email: trimmedEmail,
       });
 
@@ -175,7 +176,7 @@ function Login() {
     setLoading(true);
 
     try {
-      await axios.post("http://localhost:5000/api/auth/verify-reset-otp", {
+      await axios.post(`${ENDPOINT}/api/auth/verify-reset-otp`, {
         email: resetEmail.trim().toLowerCase(),
         otp: resetOtp.trim(),
       });
@@ -204,7 +205,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/reset-password", {
+      const { data } = await axios.post(`${ENDPOINT}/api/auth/reset-password`, {
         email: resetEmail.trim().toLowerCase(),
         otp: resetOtp.trim(),
         newPassword,
@@ -234,7 +235,7 @@ function Login() {
     if (!resetEmail) return;
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/auth/forgot-password", {
+      await axios.post(`${ENDPOINT}/api/auth/forgot-password`, {
         email: resetEmail.trim().toLowerCase(),
       });
       setSuccessMessage("A fresh OTP verification code has been sent to your email!");

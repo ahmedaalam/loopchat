@@ -28,4 +28,7 @@ const chatSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Index for optimizing user chat retrieval queries
+chatSchema.index({ users: 1 });
+
 module.exports = mongoose.model("Chat", chatSchema);

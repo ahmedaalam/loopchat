@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import LoopChatLogo from "../components/LoopChatLogo";
 import OTPVerification from "../components/OTPVerification";
+import { ENDPOINT } from "../config";
 
 const USERNAME_REGEX = /^[a-z0-9_.]{3,20}$/;
 
@@ -66,7 +67,7 @@ function Register() {
     setUsernameChecking(true);
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/users/check-username?username=${cleaned}`,
+        `${ENDPOINT}/api/users/check-username?username=${cleaned}`,
       );
       setUsernameAvailable(data.available);
       if (!data.available) {
@@ -139,7 +140,7 @@ function Register() {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/auth/register", {
+      await axios.post(`${ENDPOINT}/api/auth/register`, {
         name: trimmedName,
         username,
         email: trimmedEmail,

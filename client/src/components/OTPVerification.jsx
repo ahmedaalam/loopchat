@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { ENDPOINT } from "../config";
 
 function OTPVerification({ email, onSuccess, onBack }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -71,7 +72,7 @@ function OTPVerification({ email, onSuccess, onBack }) {
 
     setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/verify-otp", {
+      const { data } = await axios.post(`${ENDPOINT}/api/auth/verify-otp`, {
         email,
         otp: otpCode,
       });
@@ -89,7 +90,7 @@ function OTPVerification({ email, onSuccess, onBack }) {
     setSuccessMsg("");
     setResending(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/resend-otp", {
+      const { data } = await axios.post(`${ENDPOINT}/api/auth/resend-otp`, {
         email,
       });
       setSuccessMsg(data.message || "A new OTP code has been sent to your email.");

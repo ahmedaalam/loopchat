@@ -11,7 +11,7 @@ import {
 } from "react-icons/bs";
 import { HiSpeakerWave } from "react-icons/hi2";
 
-const ENDPOINT = "http://localhost:5000";
+import { ENDPOINT, getFullFileUrl } from "../config";
 
 // ─── SVG Helper Icons ────────────────────────────────────────────────────────
 function PhoneCallIcon({ size = 18, color = "currentColor" }) {
@@ -854,7 +854,7 @@ function AttachmentView({
   isGroupChat,
 }) {
   if (!file || !file.url) return null;
-  const fullUrl = `http://localhost:5000${file.url}`;
+  const fullUrl = getFullFileUrl(file.url);
 
   if (file.fileType === "image") {
     return (
@@ -1096,9 +1096,7 @@ function Chat() {
 
   const renderUserAvatar = (user, size = 40) => {
     if (user?.avatar) {
-      const url = user.avatar.startsWith("http")
-        ? user.avatar
-        : `http://localhost:5000${user.avatar}`;
+      const url = getFullFileUrl(user.avatar);
       return (
         <img
           src={url}
@@ -1199,7 +1197,7 @@ function Chat() {
 
       try {
         await axios.put(
-          `http://localhost:5000/api/message/${chatId}/read`,
+          `${ENDPOINT}/api/message/${chatId}/read`,
           {},
           { headers: { Authorization: `Bearer ${currentUser.token}` } },
         );
@@ -1914,7 +1912,7 @@ function Chat() {
         formData.append("file", audioFile);
 
         const uploadRes = await axios.post(
-          "http://localhost:5000/api/upload",
+          `${ENDPOINT}/api/upload`,
           formData,
           {
             headers: {
@@ -1925,7 +1923,7 @@ function Chat() {
         );
 
         const { data } = await axios.post(
-          "http://localhost:5000/api/message",
+          `${ENDPOINT}/api/message`,
           {
             content: "",
             chatId: selectedChat._id,
@@ -1971,7 +1969,7 @@ function Chat() {
   // Fetch chats
   const fetchChats = async (token) => {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/chat", {
+      const { data } = await axios.get(`${ENDPOINT}/api/chat`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setChats(data);
@@ -1990,7 +1988,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/friends/requests",
+        `${ENDPOINT}/api/friends/requests`,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setIncomingRequests(data.incoming || []);
@@ -2002,7 +2000,7 @@ function Chat() {
   const fetchAcceptedContacts = async () => {
     if (!currentUser) return;
     try {
-      const { data } = await axios.get("http://localhost:5000/api/friends", {
+      const { data } = await axios.get(`${ENDPOINT}/api/friends`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
       setAcceptedContacts(data || []);
@@ -2014,7 +2012,7 @@ function Chat() {
   const handleRemoveContact = async (contactId) => {
     if (!currentUser || !contactId) return;
     try {
-      await axios.delete(`http://localhost:5000/api/friends/${contactId}`, {
+      await axios.delete(`${ENDPOINT}/api/friends/${contactId}`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
       setAcceptedContacts((prev) => prev.filter((c) => c._id !== contactId));
@@ -2048,7 +2046,7 @@ function Chat() {
     if (!currentUser || !userId) return;
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/friends/status/${userId}`,
+        `${ENDPOINT}/api/friends/status/${userId}`,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({ ...prev, [userId]: data }));
@@ -2061,7 +2059,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       const { data } = await axios.post(
-        `http://localhost:5000/api/friends/request/${userId}`,
+        `${ENDPOINT}/api/friends/request/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2083,7 +2081,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       const { data } = await axios.post(
-        `http://localhost:5000/api/friends/accept/${requestId}`,
+        `${ENDPOINT}/api/friends/accept/${requestId}`,
         {},
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2104,7 +2102,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       await axios.post(
-        `http://localhost:5000/api/friends/decline/${requestId}`,
+        `${ENDPOINT}/api/friends/decline/${requestId}`,
         {},
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2123,7 +2121,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       await axios.delete(
-        `http://localhost:5000/api/friends/cancel/${requestId}`,
+        `${ENDPOINT}/api/friends/cancel/${requestId}`,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setFriendStatuses((prev) => ({
@@ -2159,7 +2157,7 @@ function Chat() {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/chat",
+        `${ENDPOINT}/api/chat`,
         { userId },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2221,7 +2219,7 @@ function Chat() {
   const handleDeleteChatById = async (chatId) => {
     if (!currentUser || !chatId) return;
     try {
-      await axios.delete(`http://localhost:5000/api/chat/${chatId}`, {
+      await axios.delete(`${ENDPOINT}/api/chat/${chatId}`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
       setChats((prev) => prev.filter((c) => c._id !== chatId));
@@ -2247,7 +2245,7 @@ function Chat() {
     if (!currentUser || !chatId) return;
     try {
       await axios.put(
-        `http://localhost:5000/api/chat/${chatId}/clear`,
+        `${ENDPOINT}/api/chat/${chatId}/clear`,
         {},
         {
           headers: { Authorization: `Bearer ${currentUser.token}` },
@@ -2277,7 +2275,7 @@ function Chat() {
     if (!currentUser) return;
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/message/${chatId}`,
+        `${ENDPOINT}/api/message/${chatId}`,
         {
           headers: { Authorization: `Bearer ${currentUser.token}` },
         },
@@ -2300,7 +2298,7 @@ function Chat() {
       }
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/api/users?search=${searchQuery}`,
+          `${ENDPOINT}/api/users?search=${searchQuery}`,
           { headers: { Authorization: `Bearer ${currentUser.token}` } },
         );
         setSearchResults(data);
@@ -2331,7 +2329,7 @@ function Chat() {
     const searchUsers = async () => {
       try {
         const { data } = await axios.get(
-          `http://localhost:5000/api/users?search=${groupSearch}`,
+          `${ENDPOINT}/api/users?search=${groupSearch}`,
           { headers: { Authorization: `Bearer ${currentUser.token}` } },
         );
         setGroupSearchResults(data);
@@ -2449,7 +2447,7 @@ function Chat() {
         formData.append("file", pendingFile.file);
 
         const uploadRes = await axios.post(
-          "http://localhost:5000/api/upload",
+          `${ENDPOINT}/api/upload`,
           formData,
           {
             headers: {
@@ -2470,7 +2468,7 @@ function Chat() {
       setLocalTyping(false);
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/message",
+        `${ENDPOINT}/api/message`,
         {
           content,
           chatId: selectedChat._id,
@@ -2532,7 +2530,7 @@ function Chat() {
     setProfileUsernameChecking(true);
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/users/check-username?username=${cleaned}`,
+        `${ENDPOINT}/api/users/check-username?username=${cleaned}`,
       );
 
       const isCurrentUsername =
@@ -2571,7 +2569,7 @@ function Chat() {
     setProfileUsernameError("");
     try {
       const { data } = await axios.put(
-        "http://localhost:5000/api/users/profile",
+        `${ENDPOINT}/api/users/profile`,
         {
           name: editName,
           username: editUsername.toLowerCase() || undefined,
@@ -2620,7 +2618,7 @@ function Chat() {
     try {
       // 1. Upload image file to server
       const { data: uploadData } = await axios.post(
-        "http://localhost:5000/api/upload",
+        `${ENDPOINT}/api/upload`,
         formData,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2630,7 +2628,7 @@ function Chat() {
 
       // 2. Immediately persist avatar to database profile
       const { data: updatedProfile } = await axios.put(
-        "http://localhost:5000/api/users/profile",
+        `${ENDPOINT}/api/users/profile`,
         { avatar: newAvatarUrl },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2652,7 +2650,7 @@ function Chat() {
     try {
       // 1. Persist empty avatar in database
       const { data: updatedProfile } = await axios.put(
-        "http://localhost:5000/api/users/profile",
+        `${ENDPOINT}/api/users/profile`,
         { avatar: "" },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2675,7 +2673,7 @@ function Chat() {
     if (!recipient || !recipient._id) return;
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/api/users/profile/${recipient._id}`,
+        `${ENDPOINT}/api/users/profile/${recipient._id}`,
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
       setContactInfoData(data);
@@ -2690,8 +2688,8 @@ function Chat() {
     setIsBlockingActionLoading(true);
     try {
       const endpoint = contactInfoData.isBlocked
-        ? `http://localhost:5000/api/users/unblock/${contactInfoData._id}`
-        : `http://localhost:5000/api/users/block/${contactInfoData._id}`;
+        ? `${ENDPOINT}/api/users/unblock/${contactInfoData._id}`
+        : `${ENDPOINT}/api/users/block/${contactInfoData._id}`;
       await axios.post(
         endpoint,
         {},
@@ -2718,8 +2716,8 @@ function Chat() {
     setIsBlockingActionLoading(true);
     try {
       const endpoint = isRecipientBlocked
-        ? `http://localhost:5000/api/users/unblock/${recipient._id}`
-        : `http://localhost:5000/api/users/block/${recipient._id}`;
+        ? `${ENDPOINT}/api/users/unblock/${recipient._id}`
+        : `${ENDPOINT}/api/users/block/${recipient._id}`;
       await axios.post(
         endpoint,
         {},
@@ -2756,7 +2754,7 @@ function Chat() {
     if (!window.confirm("Delete this message/attachment for everyone?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/message/${messageId}`, {
+      await axios.delete(`${ENDPOINT}/api/message/${messageId}`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
 
@@ -2798,7 +2796,7 @@ function Chat() {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/chat/${selectedChat._id}/clear`,
+        `${ENDPOINT}/api/chat/${selectedChat._id}/clear`,
         {},
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -2828,7 +2826,7 @@ function Chat() {
       return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/chat/${selectedChat._id}`, {
+      await axios.delete(`${ENDPOINT}/api/chat/${selectedChat._id}`, {
         headers: { Authorization: `Bearer ${currentUser.token}` },
       });
 
@@ -2849,7 +2847,7 @@ function Chat() {
     if (!forwardingMsg || !currentUser) return;
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/message",
+        `${ENDPOINT}/api/message`,
         {
           content: forwardingMsg.content || "",
           chatId: targetChat._id,
@@ -2888,7 +2886,7 @@ function Chat() {
     setGroupCreating(true);
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/chat/group",
+        `${ENDPOINT}/api/chat/group`,
         {
           name: groupName,
           users: selectedGroupMembers.map((u) => u._id),
@@ -2925,7 +2923,7 @@ function Chat() {
     if (!window.confirm(`Leave "${selectedChat.chatName}"?`)) return;
     try {
       await axios.put(
-        "http://localhost:5000/api/chat/group/remove",
+        `${ENDPOINT}/api/chat/group/remove`,
         { chatId: selectedChat._id, userId: currentUser.user._id },
         { headers: { Authorization: `Bearer ${currentUser.token}` } },
       );
@@ -4150,7 +4148,7 @@ function Chat() {
                         return;
                       try {
                         await axios.delete(
-                          "http://localhost:5000/api/message/calls/clear",
+                          `${ENDPOINT}/api/message/calls/clear`,
                           {
                             headers: {
                               Authorization: `Bearer ${currentUser.token}`,
@@ -4687,11 +4685,7 @@ function Chat() {
                   >
                     {editAvatar ? (
                       <img
-                        src={
-                          editAvatar.startsWith("http")
-                            ? editAvatar
-                            : `http://localhost:5000${editAvatar}`
-                        }
+                        src={getFullFileUrl(editAvatar)}
                         alt="Avatar"
                         className="profile-avatar-img"
                       />
@@ -5242,7 +5236,7 @@ function Chat() {
 
                               {msg.file && (
                                 <a
-                                  href={`http://localhost:5000${msg.file.url}`}
+                                  href={getFullFileUrl(msg.file.url)}
                                   download={msg.file.fileName}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -5502,7 +5496,7 @@ function Chat() {
                                   isSentByMe={isSentByMe}
                                   onOpenLightbox={(f) =>
                                     setMediaLightbox({
-                                      url: `http://localhost:5000${f.url}`,
+                                      url: getFullFileUrl(f.url),
                                       fileType: f.fileType,
                                       fileName: f.fileName,
                                     })
@@ -5826,11 +5820,7 @@ function Chat() {
               <div className="profile-avatar-wrapper">
                 {editAvatar ? (
                   <img
-                    src={
-                      editAvatar.startsWith("http")
-                        ? editAvatar
-                        : `http://localhost:5000${editAvatar}`
-                    }
+                    src={getFullFileUrl(editAvatar)}
                     alt="Avatar"
                     className="profile-avatar-img"
                   />

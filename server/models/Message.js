@@ -54,4 +54,7 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound index for optimizing chat message history retrieval
+messageSchema.index({ chat: 1, createdAt: 1 });
+
 module.exports = mongoose.model("Message", messageSchema);
