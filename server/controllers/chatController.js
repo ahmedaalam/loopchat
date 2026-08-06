@@ -29,6 +29,11 @@ exports.accessChat = async (req, res) => {
     });
 
   if (chat) {
+    if (chat.deletedFor?.some((id) => id.toString() === req.user.toString())) {
+      await Chat.findByIdAndUpdate(chat._id, {
+        $pull: { deletedFor: req.user },
+      });
+    }
     return res.json(chat);
   }
 
@@ -56,11 +61,12 @@ exports.accessChat = async (req, res) => {
   res.status(201).json(newChat);
 };
 
-// GET all chats for logged-in user
+// GET all chats for logged-in user (excluding chats deleted by current user)
 exports.fetchChats = async (req, res) => {
   try {
     let chats = await Chat.find({
       users: { $in: [req.user] },
+      deletedFor: { $ne: req.user },
     })
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
@@ -243,7 +249,8 @@ exports.clearChat = async (req, res) => {
   }
 };
 
-// DELETE CHAT - deletes chat room entirely and all associated messages & files
+// DELETE CHAT - User-specific delete chat (WhatsApp style)
+// Adds req.user to deletedFor and records clear timestamp without deleting database records or affecting other participants
 exports.deleteChat = async (req, res) => {
   const { chatId } = req.params;
 
@@ -253,21 +260,35 @@ exports.deleteChat = async (req, res) => {
       return res.status(404).json({ message: "Chat not found" });
     }
 
-    const messages = await Message.find({ chat: chatId });
-    for (const msg of messages) {
-      if (msg.file && msg.file.url) {
-        const filename = path.basename(msg.file.url);
-        const filePath = path.join(__dirname, "../uploads", filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlink(filePath, (err) => {
-            if (err) console.error("Failed to delete attachment file from disk:", err);
-          });
-        }
-      }
+    const isMember = chat.users.some(
+      (u) => u.toString() === req.user.toString()
+    );
+    if (!isMember) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this chat" });
     }
 
-    await Message.deleteMany({ chat: chatId });
-    await Chat.findByIdAndDelete(chatId);
+    // Update or push clearedBy timestamp for requesting user
+    const existingIndex = chat.clearedBy.findIndex(
+      (item) => item.user && item.user.toString() === req.user.toString()
+    );
+
+    if (existingIndex > -1) {
+      chat.clearedBy[existingIndex].clearedAt = new Date();
+    } else {
+      chat.clearedBy.push({
+        user: req.user,
+        clearedAt: new Date(),
+      });
+    }
+
+    // Add user to deletedFor list
+    if (!chat.deletedFor.some((id) => id.toString() === req.user.toString())) {
+      chat.deletedFor.push(req.user);
+    }
+
+    await chat.save();
 
     res.json({ message: "Chat deleted successfully", chatId });
   } catch (error) {

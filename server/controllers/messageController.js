@@ -68,8 +68,11 @@ exports.sendMessage = async (req, res) => {
     });
   }
 
-  // Update latest message in Chat
-  await Chat.findByIdAndUpdate(chatId, { latestMessage: message._id });
+  // Update latest message in Chat and unhide chat for any participant who deleted it
+  await Chat.findByIdAndUpdate(chatId, {
+    latestMessage: message._id,
+    $set: { deletedFor: [] },
+  });
 
   res.status(201).json(message);
 };

@@ -168,12 +168,7 @@ io.on("connection", (socket) => {
 
 
 
-  // delete chat broadcast
-  socket.on("delete chat", ({ chatId }) => {
-    if (chatId) {
-      io.to(chatId).emit("chat deleted", { chatId });
-    }
-  });
+
 
   // ── Friend Request real-time events ────────────────────────────────────────
 

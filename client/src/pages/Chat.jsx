@@ -1437,13 +1437,7 @@ function Chat() {
 
 
 
-    const handleChatDeleted = ({ chatId }) => {
-      if (selectedChatRef.current?._id === chatId) {
-        setSelectedChat(null);
-        setMessages([]);
-      }
-      setChats((prev) => prev.filter((c) => c._id !== chatId));
-    };
+
 
     const handleFriendRemoved = ({ removedUserId, chatId }) => {
       if (!removedUserId) return;
@@ -1550,7 +1544,6 @@ function Chat() {
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
     socket.on("message deleted", handleMessageDeleted);
-    socket.on("chat deleted", handleChatDeleted);
     socket.on("friend_removed", handleFriendRemoved);
     socket.on("typing", handleTyping);
     socket.on("stop typing", handleStopTyping);
@@ -1621,7 +1614,6 @@ function Chat() {
       socket.off("receive message", handleReceivedMessage);
       socket.off("messages read", handleMessagesRead);
       socket.off("message deleted", handleMessageDeleted);
-      socket.off("chat deleted", handleChatDeleted);
       socket.off("friend_removed", handleFriendRemoved);
       socket.off("typing", handleTyping);
       socket.off("stop typing", handleStopTyping);
@@ -2825,8 +2817,8 @@ function Chat() {
       setChats((prev) => prev.filter((c) => c._id !== deletedChatId));
       setSelectedChat(null);
       setMessages([]);
-      socket?.emit("delete chat", { chatId: deletedChatId });
       setShowChatHeaderMenu(false);
+      showToast("Chat deleted.");
     } catch (err) {
       console.error("Error deleting chat:", err);
       alert("Failed to delete chat.");
