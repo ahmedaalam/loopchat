@@ -4,6 +4,12 @@ import io from "socket.io-client";
 import LoopChatLogo from "../components/LoopChatLogo";
 import CallModal from "../components/CallModal";
 import { UserMinusIcon, MinusCircle } from "lucide-react";
+import {
+  BsCameraFill,
+  BsCameraVideoFill,
+  BsFileEarmarkFill,
+} from "react-icons/bs";
+import { HiSpeakerWave } from "react-icons/hi2";
 
 const ENDPOINT = "http://localhost:5000";
 
@@ -3033,7 +3039,7 @@ function Chat() {
 
       let callLabel = "";
       if (isMeSender) {
-        callLabel = isVideo ? "Outgoing video call" : "Outgoing voice call";
+        callLabel = isVideo ? "Video call" : "Voice call";
       } else if (isMissed) {
         callLabel = isVideo ? "Missed video call" : "Missed voice call";
       } else {
@@ -3076,13 +3082,13 @@ function Chat() {
           }}
         >
           {type === "image" ? (
-            <CameraIcon size={12} color="var(--accent-text)" />
+            <BsCameraFill size={12} />
           ) : type === "video" ? (
-            <VideoIcon size={12} color="var(--accent-text)" />
+            <BsCameraVideoFill size={12} />
           ) : type === "audio" ? (
-            <AudioIcon size={12} color="var(--accent-text)" />
+            <HiSpeakerWave size={12} />
           ) : (
-            <FileTextIcon size={12} color="var(--accent-text)" />
+            <BsFileEarmarkFill size={12} />
           )}
           <span>
             {type === "image"
