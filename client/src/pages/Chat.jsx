@@ -902,7 +902,9 @@ function AttachmentView({
 
   if (file.fileType === "audio") {
     return (
-      <div className="chat-media-audio-wrapper">
+      <div
+        className={`chat-media-audio-wrapper ${isSentByMe ? "sent-audio" : "received-audio"}`}
+      >
         <audio src={fullUrl} controls className="chat-media-audio" />
         {showTimeOverlay && (
           <div className="media-time-badge inline-badge">

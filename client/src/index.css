@@ -121,37 +121,41 @@ body {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-height: 100vh;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
 }
 
 .auth-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 3rem 2.5rem;
+  border-radius: 20px;
+  padding: 2.25rem 2rem;
   width: 100%;
-  max-width: 420px;
-  animation: fadeUp 0.4s var(--ease);
+  max-width: 400px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  animation: fadeUp 0.35s var(--ease);
 }
 
 .auth-title {
-  font-size: 1.9rem;
+  font-size: 1.65rem;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.4px;
   color: var(--text-1);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 
 .auth-subtitle {
   color: var(--text-2);
-  font-size: 0.93rem;
-  margin-bottom: 2.5rem;
+  font-size: 0.88rem;
+  margin-bottom: 1.5rem;
   font-weight: 400;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .input-group {
@@ -1673,10 +1677,39 @@ html:not([data-theme="dark"]) .item-msg {
     overflow: hidden;
   }
 
-  /* Auth card full-width */
+  /* Auth card compact & sleek on mobile */
+  .auth-container {
+    padding: 1.25rem 1rem;
+    align-items: center;
+  }
   .auth-card {
-    padding: 2rem 1.25rem;
-    margin: 1rem;
+    padding: 1.65rem 1.25rem;
+    max-width: 370px;
+    border-radius: 18px;
+    margin: 0 auto;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  }
+  .auth-title {
+    font-size: 1.4rem;
+  }
+  .auth-subtitle {
+    font-size: 0.84rem;
+    margin-bottom: 1.2rem;
+  }
+  .auth-input {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+  .auth-button {
+    padding: 0.75rem;
+    font-size: 0.92rem;
+    border-radius: 10px;
+    margin-top: 0.4rem;
+  }
+  .auth-link {
+    margin-top: 1.1rem;
+    font-size: 0.84rem;
   }
 }
 
@@ -1728,8 +1761,37 @@ html:not([data-theme="dark"]) .item-msg {
     padding: 1.5rem 1rem;
     max-width: 92vw;
   }
+  .auth-container {
+    padding: 1rem 0.75rem;
+  }
   .auth-card {
-    padding: 1.5rem 1rem;
+    padding: 1.4rem 1rem;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+  .auth-title {
+    font-size: 1.3rem;
+  }
+  .auth-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  .input-label {
+    font-size: 0.7rem;
+  }
+  .auth-input {
+    padding: 0.62rem 0.75rem;
+    font-size: 0.88rem;
+    border-radius: 10px;
+  }
+  .auth-button {
+    padding: 0.68rem;
+    font-size: 0.88rem;
+    border-radius: 10px;
+  }
+  .auth-link {
+    margin-top: 0.9rem;
+    font-size: 0.8rem;
   }
   .otp-box {
     width: 40px;
@@ -2035,8 +2097,55 @@ html:not([data-theme="dark"]) .item-msg {
 
 .chat-media-audio-wrapper {
   margin-bottom: 0;
-  min-width: 240px;
+  min-width: 250px;
   border: none !important;
+  background: transparent !important;
+}
+
+/* Light Theme Voice Note Audio Controls Colors */
+.sent-audio audio::-webkit-media-controls-panel,
+.sent-audio audio::-webkit-media-controls-enclosure {
+  background-color: #cfe8fb !important;
+}
+
+.received-audio audio::-webkit-media-controls-panel,
+.received-audio audio::-webkit-media-controls-enclosure {
+  background-color: #ffffff !important;
+}
+
+/* Dark Theme Voice Note Audio Controls Colors */
+[data-theme="dark"] .sent-audio audio::-webkit-media-controls-panel,
+[data-theme="dark"] .sent-audio audio::-webkit-media-controls-enclosure {
+  background-color: #0078d4 !important;
+}
+
+[data-theme="dark"] .received-audio audio::-webkit-media-controls-panel,
+[data-theme="dark"] .received-audio audio::-webkit-media-controls-enclosure {
+  background-color: #1a1a1a !important;
+}
+
+/* Dark Theme Audio Player Icons (Play, Volume, 3-Dots Menu) & Timer Display in Pure White #ffffff */
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-play-button,
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-mute-button,
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-overflow-button,
+[data-theme="dark"]
+  .chat-media-audio::-webkit-media-controls-current-time-display,
+[data-theme="dark"]
+  .chat-media-audio::-webkit-media-controls-time-remaining-display {
+  filter: brightness(0) invert(1) !important;
+  color: #ccc !important;
+  -webkit-text-fill-color: #ccc !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-panel * {
+  color: #ccc !important;
+  -webkit-text-fill-color: #ccc !important;
+}
+
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-timeline,
+[data-theme="dark"] .chat-media-audio::-webkit-media-controls-volume-slider {
+  filter: brightness(0) invert(1) !important;
 }
 
 .chat-media-audio {
@@ -2045,6 +2154,7 @@ html:not([data-theme="dark"]) .item-msg {
   border-radius: var(--radius-md);
   border: none !important;
   outline: none !important;
+  background: transparent !important;
 }
 
 /* Document Download Card */
