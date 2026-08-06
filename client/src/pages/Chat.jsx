@@ -1435,14 +1435,7 @@ function Chat() {
       );
     };
 
-    const handleChatCleared = ({ chatId }) => {
-      if (selectedChatRef.current?._id === chatId) {
-        setMessages([]);
-      }
-      setChats((prev) =>
-        prev.map((c) => (c._id === chatId ? { ...c, latestMessage: null } : c)),
-      );
-    };
+
 
     const handleChatDeleted = ({ chatId }) => {
       if (selectedChatRef.current?._id === chatId) {
@@ -1557,7 +1550,6 @@ function Chat() {
     socket.on("receive message", handleReceivedMessage);
     socket.on("messages read", handleMessagesRead);
     socket.on("message deleted", handleMessageDeleted);
-    socket.on("chat cleared", handleChatCleared);
     socket.on("chat deleted", handleChatDeleted);
     socket.on("friend_removed", handleFriendRemoved);
     socket.on("typing", handleTyping);
@@ -1629,7 +1621,6 @@ function Chat() {
       socket.off("receive message", handleReceivedMessage);
       socket.off("messages read", handleMessagesRead);
       socket.off("message deleted", handleMessageDeleted);
-      socket.off("chat cleared", handleChatCleared);
       socket.off("chat deleted", handleChatDeleted);
       socket.off("friend_removed", handleFriendRemoved);
       socket.off("typing", handleTyping);
@@ -2807,8 +2798,8 @@ function Chat() {
           c._id === selectedChat._id ? { ...c, latestMessage: null } : c,
         ),
       );
-      socket?.emit("clear chat", { chatId: selectedChat._id });
       setShowChatHeaderMenu(false);
+      showToast("Chat cleared.");
     } catch (err) {
       console.error("Error clearing chat:", err);
       alert("Failed to clear chat.");

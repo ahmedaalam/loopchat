@@ -74,10 +74,24 @@ exports.sendMessage = async (req, res) => {
   res.status(201).json(message);
 };
 
-// GET all messages of a chat
+// GET all messages of a chat (filtered by user's clearedAt timestamp)
 exports.getMessages = async (req, res) => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
+    const { chatId } = req.params;
+    const query = { chat: chatId };
+
+    // Check if current user cleared this chat previously
+    const chat = await Chat.findById(chatId);
+    if (chat && chat.clearedBy) {
+      const userClearInfo = chat.clearedBy.find(
+        (c) => c.user && c.user.toString() === req.user.toString()
+      );
+      if (userClearInfo && userClearInfo.clearedAt) {
+        query.createdAt = { $gt: userClearInfo.clearedAt };
+      }
+    }
+
+    const messages = await Message.find(query)
       .populate("sender", "name email avatar bio")
       .populate({
         path: "replyTo",

@@ -166,12 +166,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // clear chat broadcast
-  socket.on("clear chat", ({ chatId }) => {
-    if (chatId) {
-      io.to(chatId).emit("chat cleared", { chatId });
-    }
-  });
+
 
   // delete chat broadcast
   socket.on("delete chat", ({ chatId }) => {

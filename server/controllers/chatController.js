@@ -59,7 +59,7 @@ exports.accessChat = async (req, res) => {
 // GET all chats for logged-in user
 exports.fetchChats = async (req, res) => {
   try {
-    const chats = await Chat.find({
+    let chats = await Chat.find({
       users: { $in: [req.user] },
     })
       .populate("users", "-password")
@@ -69,6 +69,22 @@ exports.fetchChats = async (req, res) => {
         populate: { path: "sender", select: "name email" },
       })
       .sort({ updatedAt: -1 });
+
+    // Hide latestMessage preview if it was created before user's clearedAt timestamp
+    chats = chats.map((chat) => {
+      const chatObj = chat.toObject();
+      const userClearInfo = chat.clearedBy?.find(
+        (c) => c.user && c.user.toString() === req.user.toString()
+      );
+      if (userClearInfo && chatObj.latestMessage) {
+        const msgTime = new Date(chatObj.latestMessage.createdAt).getTime();
+        const clearedTime = new Date(userClearInfo.clearedAt).getTime();
+        if (msgTime <= clearedTime) {
+          chatObj.latestMessage = null;
+        }
+      }
+      return chatObj;
+    });
 
     res.json(chats);
   } catch (error) {
@@ -184,7 +200,8 @@ const fs = require("fs");
 const path = require("path");
 const Message = require("../models/Message");
 
-// CLEAR CHAT - deletes all messages in a chat and unlinks physical files
+// CLEAR CHAT - User-specific clear chat (WhatsApp style)
+// Updates clearedAt timestamp for req.user without deleting messages for other participants or from database
 exports.clearChat = async (req, res) => {
   const { chatId } = req.params;
 
@@ -194,21 +211,30 @@ exports.clearChat = async (req, res) => {
       return res.status(404).json({ message: "Chat not found" });
     }
 
-    const messages = await Message.find({ chat: chatId });
-    for (const msg of messages) {
-      if (msg.file && msg.file.url) {
-        const filename = path.basename(msg.file.url);
-        const filePath = path.join(__dirname, "../uploads", filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlink(filePath, (err) => {
-            if (err) console.error("Failed to delete attachment file from disk:", err);
-          });
-        }
-      }
+    const isMember = chat.users.some(
+      (u) => u.toString() === req.user.toString()
+    );
+    if (!isMember) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to clear this chat" });
     }
 
-    await Message.deleteMany({ chat: chatId });
-    await Chat.findByIdAndUpdate(chatId, { latestMessage: null });
+    // Update or push clearedBy timestamp for requesting user
+    const existingIndex = chat.clearedBy.findIndex(
+      (item) => item.user && item.user.toString() === req.user.toString()
+    );
+
+    if (existingIndex > -1) {
+      chat.clearedBy[existingIndex].clearedAt = new Date();
+    } else {
+      chat.clearedBy.push({
+        user: req.user,
+        clearedAt: new Date(),
+      });
+    }
+
+    await chat.save();
 
     res.json({ message: "Chat cleared successfully", chatId });
   } catch (error) {
