@@ -1,5 +1,9 @@
 node_modules
-.env
 dist
 uploads
 *.log
+
+# Environment variables (Ignore all secrets, allow example templates)
+.env
+.env.*
+!.env.example

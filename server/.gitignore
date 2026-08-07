@@ -1,2 +1,8 @@
 node_modules
+uploads
+*.log
+
+# Environment variables (Ignore all secrets, allow example templates)
 .env
+.env.*
+!.env.example
