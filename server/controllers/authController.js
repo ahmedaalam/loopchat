@@ -135,7 +135,8 @@ exports.verifyOTP = async (req, res) => {
     await user.save();
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const secret = process.env.JWT_SECRET || "loopchat_secret_key_2026";
+    const token = jwt.sign({ id: user._id }, secret, {
       expiresIn: "7d",
     });
 
@@ -237,7 +238,11 @@ exports.login = async (req, res) => {
       user.otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
       await user.save();
 
-      await sendOTPEmail(trimmedEmail, otp);
+      try {
+        await sendOTPEmail(trimmedEmail, otp);
+      } catch (e) {
+        console.error("Failed to send verification email:", e);
+      }
 
       return res.status(403).json({
         isUnverified: true,
@@ -247,7 +252,8 @@ exports.login = async (req, res) => {
     }
 
     // Generate token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const secret = process.env.JWT_SECRET || "loopchat_secret_key_2026";
+    const token = jwt.sign({ id: user._id }, secret, {
       expiresIn: "7d",
     });
 

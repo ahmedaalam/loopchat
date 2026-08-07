@@ -7,7 +7,8 @@ const protect = (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || "loopchat_secret_key_2026";
+      const decoded = jwt.verify(token, secret);
 
       req.user = decoded.id;
 
