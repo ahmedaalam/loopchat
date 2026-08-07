@@ -26,15 +26,34 @@ const app = express();
 // ✅ connect database
 connectDB();
 
-// Dynamic CORS configuration
-const allowedOrigins = process.env.CLIENT_URL
-  ? [process.env.CLIENT_URL, "http://localhost:5173", "http://localhost:3000"]
-  : "*";
+// Dynamic & Resilient CORS Configuration
+const allowedOriginCallback = (origin, callback) => {
+  // Allow requests with no origin (like mobile apps, curl, server-to-server)
+  if (!origin) return callback(null, true);
+
+  const clientUrlClean = process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.replace(/\/+$/, "")
+    : "";
+
+  if (
+    origin.includes("localhost") ||
+    origin.includes("127.0.0.1") ||
+    origin.includes("vercel.app") ||
+    (clientUrlClean && origin.startsWith(clientUrlClean))
+  ) {
+    return callback(null, true);
+  }
+
+  // Fallback: allow origin to prevent CORS blocking on production domain variations
+  callback(null, true);
+};
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: allowedOriginCallback,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
@@ -67,7 +86,7 @@ const server = http.createServer(app);
 // attach socket.io
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: allowedOriginCallback,
     methods: ["GET", "POST"],
   },
 });
