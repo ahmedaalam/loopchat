@@ -1,4 +1,4 @@
-# 💬 LoopChat
+# LoopChat
 
 > A full-stack, real-time messaging application built with the **MERN stack** and **Socket.IO** — featuring end-to-end chat, WebRTC voice & video calls, friend system, group chats, and more.
 
@@ -245,7 +245,7 @@ Open **http://localhost:5173** in your browser.
 
 ## 🔗 Live Demo
 
-> _Deploy and add your live link here_
+https://loopchat-web.vercel.app/
 
 ---
 
