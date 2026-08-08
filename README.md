@@ -106,7 +106,7 @@ loopchat/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/loopchat.git
+git clone https://github.com/ahmedaalam/loopchat.git
 cd loopchat
 ```
 
@@ -239,7 +239,10 @@ Open **http://localhost:5173** in your browser.
 
 ## 📸 Screenshots
 
-> Add screenshots here of: Login page, Chat UI (light/dark), Call screen, Group chat, Settings
+![Login](./assets/Screenshot1.png)
+![Chat UI Dark](./assets/Screenshot2.png)
+![Chat UI Light](./assets/Screenshot3.png)
+![Call Feature](./assets/Screenshot4.png)
 
 ---
 
