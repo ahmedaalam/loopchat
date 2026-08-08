@@ -239,11 +239,17 @@ Open **http://localhost:5173** in your browser.
 
 ## 📸 Screenshots
 
-![Login](./assets/Screenshot1.png)
-![Chat UI Dark](./assets/Screenshot2.png)
-![Chat UI Light](./assets/Screenshot3.png)
-![Call Feature](./assets/Screenshot4.png)
+### Login
+<img src="./assets/Screenshot1.png" width="700"/>
 
+### Chat UI (Dark)
+<img src="./assets/Screenshot2.png" width="700"/>
+
+### Chat UI (Light)
+<img src="./assets/Screenshot3.png" width="700"/>
+
+### Call Feature
+<img src="./assets/Screenshot4.png" width="700"/>
 ---
 
 ## 🔗 Live Demo
